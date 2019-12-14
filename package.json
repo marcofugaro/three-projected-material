@@ -1,0 +1,49 @@
+{
+  "name": "three-projected-material",
+  "description": "Materail which projects a texture onto an object",
+  "version": "1.0.0",
+  "main": "build/ProjectedMaterial.js",
+  "module": "build/ProjectedMaterial.module.js",
+  "repository": "git@github.com:marcofugaro/three-projected-material.git",
+  "author": "Marco Fugaro <marco.fugaro@gmail.com>",
+  "license": "MIT",
+  "files": [
+    "build/"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "start": "npx serve examples/",
+    "build-examples": "NODE_ENV=production webpack"
+  },
+  "peerDependencies": {
+    "three": "^0.111.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.6.4",
+    "babel-loader": "^8.0.6",
+    "babel-preset-accurapp": "^4.1.5",
+    "canvas-sketch-util": "^1.10.0",
+    "chalk": "^2.4.2",
+    "controls-gui": "^1.2.2",
+    "controls-state": "^1.1.1",
+    "datauritoblob": "^1.0.0",
+    "detect-gpu": "^1.1.2",
+    "eslint-config-accurapp": "^4.2.8",
+    "event-hooks-webpack-plugin": "^2.1.4",
+    "glslify-loader": "^2.0.0",
+    "html-webpack-plugin": "^3.2.0",
+    "image-promise": "^6.0.2",
+    "lodash": "^4.17.15",
+    "orbit-controls": "^1.2.4",
+    "p-map": "^3.0.0",
+    "raw-loader": "^3.1.0",
+    "react-dev-utils": "^9.1.0",
+    "rimraf": "^3.0.0",
+    "rollup": "^1.27.11",
+    "stats.js": "^0.17.0",
+    "three": "0.110.0",
+    "touches": "^1.2.2",
+    "webpack": "^4.41.1",
+    "webpack-cli": "^3.3.9"
+  }
+}
