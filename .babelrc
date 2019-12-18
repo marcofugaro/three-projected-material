@@ -1,3 +1,6 @@
 {
-  "presets": ["accurapp"]
+  "presets": ["accurapp"],
+  "plugins": [
+    "@babel/plugin-transform-runtime"
+  ]
 }

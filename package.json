@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.6.4",
+    "@babel/plugin-transform-runtime": "^7.7.6",
     "babel-loader": "^8.0.6",
     "babel-preset-accurapp": "^4.1.5",
     "canvas-sketch-util": "^1.10.0",

@@ -1,4 +1,3 @@
-import 'regenerator-runtime/runtime'
 import * as THREE from 'three'
 import ProjectedMaterial, { project } from '..'
 import WebGLApp from './lib/WebGLApp.js'
@@ -34,9 +33,6 @@ assets.load({ renderer: webgl.renderer }).then(() => {
   // show canvas
   webgl.canvas.style.visibility = ''
 
-  const group = new THREE.Group()
-  webgl.scene.add(group)
-
   // create a new camera from which to project
   const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 3)
   camera.position.set(2, 1.2, 0.5)
@@ -44,7 +40,7 @@ assets.load({ renderer: webgl.renderer }).then(() => {
 
   // add a camer frustum helper just for demostration purposes
   const helper = new THREE.CameraHelper(camera)
-  group.add(helper)
+  webgl.scene.add(helper)
 
   // create the mesh with the projected material
   const geometry = new THREE.BoxGeometry(1, 1, 1)
@@ -54,7 +50,7 @@ assets.load({ renderer: webgl.renderer }).then(() => {
     color: '#37E140',
   })
   const box = new THREE.Mesh(geometry, material)
-  group.add(box)
+  webgl.scene.add(box)
 
   // move the mesh any way you want!
   box.rotation.y = -Math.PI / 6
@@ -62,9 +58,9 @@ assets.load({ renderer: webgl.renderer }).then(() => {
   // and when you're ready project the texture!
   project(box)
 
-  // rotate all of this just for demo purposes
+  // rotate for demo purposes
   webgl.onUpdate(() => {
-    group.rotation.y -= 0.003
+    box.rotation.y -= 0.003
   })
 
   // add lights

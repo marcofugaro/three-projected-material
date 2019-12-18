@@ -1,4 +1,3 @@
-import 'regenerator-runtime/runtime'
 import * as THREE from 'three'
 import ProjectedMaterial, { project } from '..'
 import { random } from 'lodash'
@@ -37,11 +36,11 @@ assets.load({ renderer: webgl.renderer }).then(() => {
 
   // breate a bunch of meshes
   const elements = new THREE.Group()
-  const NUM_ELEMENTS = 80
+  const NUM_ELEMENTS = 50
   for (let i = 0; i < NUM_ELEMENTS; i++) {
-    const geometry = new THREE.IcosahedronGeometry(random(0.1, 0.4))
+    const geometry = new THREE.IcosahedronGeometry(random(0.1, 0.5))
     const material = new ProjectedMaterial({
-      // this time use the scene camera
+      // use the scene camera itself
       camera: webgl.camera,
       texture: assets.get(textureKey),
       color: '#3149D5',
@@ -50,10 +49,11 @@ assets.load({ renderer: webgl.renderer }).then(() => {
     const element = new THREE.Mesh(geometry, material)
 
     // move the meshes any way you want!
-    if (i < Math.round(NUM_ELEMENTS * 0.3)) {
+    if (i < NUM_ELEMENTS * 0.3) {
       element.position.x = random(-0.5, 0.5)
       element.position.y = random(-1.1, 0.5)
       element.position.z = random(-0.3, 0.3)
+      element.scale.multiplyScalar(1.4)
     } else {
       element.position.x = random(-1, 1, true)
       element.position.y = random(-2, 2, true)
