@@ -10,6 +10,7 @@ module.exports = {
   entry: {
     basic: './examples/basic.js',
     'same-camera': './examples/same-camera.js',
+    instancing: './examples/instancing.js',
   },
   output: {
     path: path.resolve(__dirname, './examples'),

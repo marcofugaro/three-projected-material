@@ -81,7 +81,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 271);
+/******/ 	return __webpack_require__(__webpack_require__.s = 273);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -51178,7 +51178,94 @@ function _classCallCheck(instance, Constructor) {
 module.exports = _classCallCheck;
 
 /***/ }),
-/* 37 */,
+/* 37 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseRandom = __webpack_require__(263),
+    isIterateeCall = __webpack_require__(264),
+    toFinite = __webpack_require__(270);
+
+/** Built-in method references without a dependency on `root`. */
+var freeParseFloat = parseFloat;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeMin = Math.min,
+    nativeRandom = Math.random;
+
+/**
+ * Produces a random number between the inclusive `lower` and `upper` bounds.
+ * If only one argument is provided a number between `0` and the given number
+ * is returned. If `floating` is `true`, or either `lower` or `upper` are
+ * floats, a floating-point number is returned instead of an integer.
+ *
+ * **Note:** JavaScript follows the IEEE-754 standard for resolving
+ * floating-point values which can produce unexpected results.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.7.0
+ * @category Number
+ * @param {number} [lower=0] The lower bound.
+ * @param {number} [upper=1] The upper bound.
+ * @param {boolean} [floating] Specify returning a floating-point number.
+ * @returns {number} Returns the random number.
+ * @example
+ *
+ * _.random(0, 5);
+ * // => an integer between 0 and 5
+ *
+ * _.random(5);
+ * // => also an integer between 0 and 5
+ *
+ * _.random(5, true);
+ * // => a floating-point number between 0 and 5
+ *
+ * _.random(1.2, 5.2);
+ * // => a floating-point number between 1.2 and 5.2
+ */
+function random(lower, upper, floating) {
+  if (floating && typeof floating != 'boolean' && isIterateeCall(lower, upper, floating)) {
+    upper = floating = undefined;
+  }
+  if (floating === undefined) {
+    if (typeof upper == 'boolean') {
+      floating = upper;
+      upper = undefined;
+    }
+    else if (typeof lower == 'boolean') {
+      floating = lower;
+      lower = undefined;
+    }
+  }
+  if (lower === undefined && upper === undefined) {
+    lower = 0;
+    upper = 1;
+  }
+  else {
+    lower = toFinite(lower);
+    if (upper === undefined) {
+      upper = lower;
+      lower = 0;
+    } else {
+      upper = toFinite(upper);
+    }
+  }
+  if (lower > upper) {
+    var temp = lower;
+    lower = upper;
+    upper = temp;
+  }
+  if (floating || lower % 1 || upper % 1) {
+    var rand = nativeRandom();
+    return nativeMin(lower + (rand * (upper - lower + freeParseFloat('1e-' + ((rand + '').length - 1)))), upper);
+  }
+  return baseRandom(lower, upper);
+}
+
+module.exports = random;
+
+
+/***/ }),
 /* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -69956,23 +70043,364 @@ module.exports = isObjectLike;
 
 
 /***/ }),
-/* 263 */,
-/* 264 */,
-/* 265 */,
-/* 266 */,
-/* 267 */,
-/* 268 */,
-/* 269 */,
-/* 270 */,
-/* 271 */
+/* 263 */
+/***/ (function(module, exports) {
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeFloor = Math.floor,
+    nativeRandom = Math.random;
+
+/**
+ * The base implementation of `_.random` without support for returning
+ * floating-point numbers.
+ *
+ * @private
+ * @param {number} lower The lower bound.
+ * @param {number} upper The upper bound.
+ * @returns {number} Returns the random number.
+ */
+function baseRandom(lower, upper) {
+  return lower + nativeFloor(nativeRandom() * (upper - lower + 1));
+}
+
+module.exports = baseRandom;
+
+
+/***/ }),
+/* 264 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var eq = __webpack_require__(265),
+    isArrayLike = __webpack_require__(266),
+    isIndex = __webpack_require__(269),
+    isObject = __webpack_require__(93);
+
+/**
+ * Checks if the given arguments are from an iteratee call.
+ *
+ * @private
+ * @param {*} value The potential iteratee value argument.
+ * @param {*} index The potential iteratee index or key argument.
+ * @param {*} object The potential iteratee object argument.
+ * @returns {boolean} Returns `true` if the arguments are from an iteratee call,
+ *  else `false`.
+ */
+function isIterateeCall(value, index, object) {
+  if (!isObject(object)) {
+    return false;
+  }
+  var type = typeof index;
+  if (type == 'number'
+        ? (isArrayLike(object) && isIndex(index, object.length))
+        : (type == 'string' && index in object)
+      ) {
+    return eq(object[index], value);
+  }
+  return false;
+}
+
+module.exports = isIterateeCall;
+
+
+/***/ }),
+/* 265 */
+/***/ (function(module, exports) {
+
+/**
+ * Performs a
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * comparison between two values to determine if they are equivalent.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.eq(object, object);
+ * // => true
+ *
+ * _.eq(object, other);
+ * // => false
+ *
+ * _.eq('a', 'a');
+ * // => true
+ *
+ * _.eq('a', Object('a'));
+ * // => false
+ *
+ * _.eq(NaN, NaN);
+ * // => true
+ */
+function eq(value, other) {
+  return value === other || (value !== value && other !== other);
+}
+
+module.exports = eq;
+
+
+/***/ }),
+/* 266 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var isFunction = __webpack_require__(267),
+    isLength = __webpack_require__(268);
+
+/**
+ * Checks if `value` is array-like. A value is considered array-like if it's
+ * not a function and has a `value.length` that's an integer greater than or
+ * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
+ * @example
+ *
+ * _.isArrayLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isArrayLike(document.body.children);
+ * // => true
+ *
+ * _.isArrayLike('abc');
+ * // => true
+ *
+ * _.isArrayLike(_.noop);
+ * // => false
+ */
+function isArrayLike(value) {
+  return value != null && isLength(value.length) && !isFunction(value);
+}
+
+module.exports = isArrayLike;
+
+
+/***/ }),
+/* 267 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseGetTag = __webpack_require__(143),
+    isObject = __webpack_require__(93);
+
+/** `Object#toString` result references. */
+var asyncTag = '[object AsyncFunction]',
+    funcTag = '[object Function]',
+    genTag = '[object GeneratorFunction]',
+    proxyTag = '[object Proxy]';
+
+/**
+ * Checks if `value` is classified as a `Function` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+ * @example
+ *
+ * _.isFunction(_);
+ * // => true
+ *
+ * _.isFunction(/abc/);
+ * // => false
+ */
+function isFunction(value) {
+  if (!isObject(value)) {
+    return false;
+  }
+  // The use of `Object#toString` avoids issues with the `typeof` operator
+  // in Safari 9 which returns 'object' for typed arrays and other constructors.
+  var tag = baseGetTag(value);
+  return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
+}
+
+module.exports = isFunction;
+
+
+/***/ }),
+/* 268 */
+/***/ (function(module, exports) {
+
+/** Used as references for various `Number` constants. */
+var MAX_SAFE_INTEGER = 9007199254740991;
+
+/**
+ * Checks if `value` is a valid array-like length.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+ * @example
+ *
+ * _.isLength(3);
+ * // => true
+ *
+ * _.isLength(Number.MIN_VALUE);
+ * // => false
+ *
+ * _.isLength(Infinity);
+ * // => false
+ *
+ * _.isLength('3');
+ * // => false
+ */
+function isLength(value) {
+  return typeof value == 'number' &&
+    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+}
+
+module.exports = isLength;
+
+
+/***/ }),
+/* 269 */
+/***/ (function(module, exports) {
+
+/** Used as references for various `Number` constants. */
+var MAX_SAFE_INTEGER = 9007199254740991;
+
+/** Used to detect unsigned integer values. */
+var reIsUint = /^(?:0|[1-9]\d*)$/;
+
+/**
+ * Checks if `value` is a valid array-like index.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+ * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+ */
+function isIndex(value, length) {
+  var type = typeof value;
+  length = length == null ? MAX_SAFE_INTEGER : length;
+
+  return !!length &&
+    (type == 'number' ||
+      (type != 'symbol' && reIsUint.test(value))) &&
+        (value > -1 && value % 1 == 0 && value < length);
+}
+
+module.exports = isIndex;
+
+
+/***/ }),
+/* 270 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var toNumber = __webpack_require__(142);
+
+/** Used as references for various `Number` constants. */
+var INFINITY = 1 / 0,
+    MAX_INTEGER = 1.7976931348623157e+308;
+
+/**
+ * Converts `value` to a finite number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.12.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {number} Returns the converted number.
+ * @example
+ *
+ * _.toFinite(3.2);
+ * // => 3.2
+ *
+ * _.toFinite(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toFinite(Infinity);
+ * // => 1.7976931348623157e+308
+ *
+ * _.toFinite('3.2');
+ * // => 3.2
+ */
+function toFinite(value) {
+  if (!value) {
+    return value === 0 ? value : 0;
+  }
+  value = toNumber(value);
+  if (value === INFINITY || value === -INFINITY) {
+    var sign = (value < 0 ? -1 : 1);
+    return sign * MAX_INTEGER;
+  }
+  return value === value ? value : 0;
+}
+
+module.exports = toFinite;
+
+
+/***/ }),
+/* 271 */,
+/* 272 */,
+/* 273 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(0);
-/* harmony import */ var ___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(63);
-/* harmony import */ var _lib_WebGLApp_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(141);
-/* harmony import */ var _lib_AssetManager_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(62);
+
+// EXTERNAL MODULE: ./node_modules/lodash/random.js
+var random = __webpack_require__(37);
+var random_default = /*#__PURE__*/__webpack_require__.n(random);
+
+// EXTERNAL MODULE: ./node_modules/three/build/three.module.js
+var three_module = __webpack_require__(0);
+
+// EXTERNAL MODULE: ./build/ProjectedMaterial.module.js
+var ProjectedMaterial_module = __webpack_require__(63);
+
+// EXTERNAL MODULE: ./node_modules/controls-state/dist/controls-state.min.js
+var controls_state_min = __webpack_require__(92);
+var controls_state_min_default = /*#__PURE__*/__webpack_require__.n(controls_state_min);
+
+// EXTERNAL MODULE: ./examples/lib/WebGLApp.js + 6 modules
+var WebGLApp = __webpack_require__(141);
+
+// EXTERNAL MODULE: ./examples/lib/AssetManager.js + 7 modules
+var AssetManager = __webpack_require__(62);
+
+// CONCATENATED MODULE: ./examples/lib/three-utils.js
+// from https://discourse.threejs.org/t/functions-to-calculate-the-visible-width-height-at-a-given-z-depth-from-a-perspective-camera/269
+function visibleHeightAtZDepth(depth, camera) {
+  // compensate for cameras not positioned at z=0
+  var cameraOffset = camera.position.z;
+
+  if (depth < cameraOffset) {
+    depth -= cameraOffset;
+  } else {
+    depth += cameraOffset;
+  } // vertical fov in radians
+
+
+  var vFOV = camera.fov * Math.PI / 180; // Math.abs to ensure the result is always positive
+
+  return 2 * Math.tan(vFOV / 2) * Math.abs(depth);
+}
+function visibleWidthAtZDepth(depth, camera) {
+  var height = visibleHeightAtZDepth(depth, camera);
+  return height * camera.aspect;
+}
+// CONCATENATED MODULE: ./examples/instancing.js
+
+
+
 
 
 
@@ -69980,15 +70408,21 @@ __webpack_require__.r(__webpack_exports__);
 
 var canvas = document.querySelector('#app'); // setup the WebGLRenderer
 
-var webgl = new _lib_WebGLApp_js__WEBPACK_IMPORTED_MODULE_2__[/* default */ "a"]({
+var webgl = new WebGLApp["a" /* default */]({
   canvas: canvas,
   // set the scene background color
-  background: '#222',
+  background: '#E6E6E6',
   // show the fps counter from stats.js
   showFps: true,
   orbitControls: {
-    distance: 4,
-    phi: Math.PI / 2.5
+    distance: 4
+  },
+  controls: {
+    speed: controls_state_min_default.a.Slider(0.3, {
+      min: 0,
+      max: 3,
+      step: 0.01
+    })
   }
 }); // attach it to the window to inspect in the console
 
@@ -69996,42 +70430,76 @@ window.webgl = webgl; // hide canvas
 
 webgl.canvas.style.visibility = 'hidden'; // preload the texture
 
-var textureKey = _lib_AssetManager_js__WEBPACK_IMPORTED_MODULE_3__[/* default */ "a"].queue({
-  url: 'images/uv.jpg',
+var textureKey = AssetManager["a" /* default */].queue({
+  url: 'images/charles-unsplash.jpg',
   type: 'texture'
 }); // load any queued assets
 
-_lib_AssetManager_js__WEBPACK_IMPORTED_MODULE_3__[/* default */ "a"].load({
+AssetManager["a" /* default */].load({
   renderer: webgl.renderer
 }).then(function () {
   // show canvas
-  webgl.canvas.style.visibility = ''; // create a new camera from which to project
+  webgl.canvas.style.visibility = '';
+  var width = visibleWidthAtZDepth(0, webgl.camera);
+  var height = visibleHeightAtZDepth(0, webgl.camera); // breate a bunch of instanced elements
 
-  var camera = new three__WEBPACK_IMPORTED_MODULE_0__[/* PerspectiveCamera */ "hb"](45, 1, 0.01, 3);
-  camera.position.set(2, 1.2, 0.5);
-  camera.lookAt(0, 0, 0); // add a camer frustum helper just for demostration purposes
+  var NUM_ELEMENTS = 1000;
+  var dummy = new three_module["fb" /* Object3D */]();
+  var geometry = new three_module["Cb" /* TetrahedronBufferGeometry */](0.4);
+  var material = new ProjectedMaterial_module["b" /* default */]({
+    camera: webgl.camera,
+    texture: AssetManager["a" /* default */].get(textureKey),
+    color: '#cccccc',
+    cover: true,
+    instanced: true
+  }); // allocate the projection data
 
-  var helper = new three__WEBPACK_IMPORTED_MODULE_0__[/* CameraHelper */ "i"](camera);
-  webgl.scene.add(helper); // create the mesh with the projected material
+  Object(ProjectedMaterial_module["a" /* allocateProjectionData */])(geometry, NUM_ELEMENTS); // create the instanced mesh
 
-  var geometry = new three__WEBPACK_IMPORTED_MODULE_0__[/* BoxGeometry */ "f"](1, 1, 1);
-  var material = new ___WEBPACK_IMPORTED_MODULE_1__[/* default */ "b"]({
-    camera: camera,
-    texture: _lib_AssetManager_js__WEBPACK_IMPORTED_MODULE_3__[/* default */ "a"].get(textureKey),
-    color: '#37E140'
-  });
-  var box = new three__WEBPACK_IMPORTED_MODULE_0__[/* Mesh */ "W"](geometry, material);
-  webgl.scene.add(box); // move the mesh any way you want!
+  var instancedMesh = new three_module["B" /* InstancedMesh */](geometry, material, NUM_ELEMENTS);
+  var initialPositions = [];
+  var initialRotations = [];
 
-  box.rotation.y = -Math.PI / 6; // and when you're ready project the texture!
+  for (var i = 0; i < NUM_ELEMENTS; i++) {
+    // position the element
+    dummy.position.x = random_default()(-width / 2, width / 2);
+    dummy.position.y = random_default()(-height / 2, height / 2);
+    dummy.rotation.x = random_default()(0, Math.PI * 2);
+    dummy.rotation.y = random_default()(0, Math.PI * 2);
+    dummy.rotation.z = random_default()(0, Math.PI * 2);
+    dummy.updateMatrix();
+    instancedMesh.setMatrixAt(i, dummy.matrix); // project the texture!
 
-  Object(___WEBPACK_IMPORTED_MODULE_1__[/* project */ "c"])(box); // rotate for demo purposes
+    dummy.updateMatrixWorld();
+    Object(ProjectedMaterial_module["d" /* projectInstanceAt */])(i, instancedMesh, dummy.matrixWorld); // rotate the element a bit
+    // so they don't show the image initially
 
-  webgl.onUpdate(function () {
-    box.rotation.y -= 0.003;
+    dummy.rotateX(-Math.PI / 2);
+    dummy.updateMatrix();
+    instancedMesh.setMatrixAt(i, dummy.matrix); // save the initial position and rotation
+
+    initialPositions.push(dummy.position.clone());
+    initialRotations.push(dummy.rotation.clone());
+  }
+
+  webgl.scene.add(instancedMesh); // rotate the elements
+
+  webgl.onUpdate(function (dt, time) {
+    for (var _i = 0; _i < NUM_ELEMENTS; _i++) {
+      dummy.position.copy(initialPositions[_i]);
+      dummy.rotation.copy(initialRotations[_i]);
+      dummy.rotateX(time * webgl.controls.speed);
+      dummy.updateMatrix();
+      instancedMesh.setMatrixAt(_i, dummy.matrix);
+    }
+
+    instancedMesh.instanceMatrix.needsUpdate = true;
   }); // add lights
 
-  var ambientLight = new three__WEBPACK_IMPORTED_MODULE_0__[/* AmbientLight */ "a"](0xffffff, 0.8);
+  var directionalLight = new three_module["r" /* DirectionalLight */](0xffffff, 0.6);
+  directionalLight.position.set(0, 10, 10);
+  webgl.scene.add(directionalLight);
+  var ambientLight = new three_module["a" /* AmbientLight */](0xffffff, 0.6);
   webgl.scene.add(ambientLight); // start animation loop
 
   webgl.start();
@@ -70040,4 +70508,4 @@ _lib_AssetManager_js__WEBPACK_IMPORTED_MODULE_3__[/* default */ "a"].load({
 
 /***/ })
 /******/ ]);
-//# sourceMappingURL=basic.bundle.js.map
+//# sourceMappingURL=instancing.bundle.js.map

@@ -42,7 +42,7 @@
     "rimraf": "^3.0.0",
     "rollup": "^1.27.11",
     "stats.js": "^0.17.0",
-    "three": "0.110.0",
+    "three": "0.111.0",
     "touches": "^1.2.2",
     "webpack": "^4.41.1",
     "webpack-cli": "^3.3.9"
