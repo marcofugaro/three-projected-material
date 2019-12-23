@@ -81,7 +81,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 272);
+/******/ 	return __webpack_require__(__webpack_require__.s = 274);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -57701,94 +57701,7 @@ module.exports = (milliseconds, options = {}) => {
 
 
 /***/ }),
-/* 62 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var baseRandom = __webpack_require__(263),
-    isIterateeCall = __webpack_require__(264),
-    toFinite = __webpack_require__(270);
-
-/** Built-in method references without a dependency on `root`. */
-var freeParseFloat = parseFloat;
-
-/* Built-in method references for those with the same name as other `lodash` methods. */
-var nativeMin = Math.min,
-    nativeRandom = Math.random;
-
-/**
- * Produces a random number between the inclusive `lower` and `upper` bounds.
- * If only one argument is provided a number between `0` and the given number
- * is returned. If `floating` is `true`, or either `lower` or `upper` are
- * floats, a floating-point number is returned instead of an integer.
- *
- * **Note:** JavaScript follows the IEEE-754 standard for resolving
- * floating-point values which can produce unexpected results.
- *
- * @static
- * @memberOf _
- * @since 0.7.0
- * @category Number
- * @param {number} [lower=0] The lower bound.
- * @param {number} [upper=1] The upper bound.
- * @param {boolean} [floating] Specify returning a floating-point number.
- * @returns {number} Returns the random number.
- * @example
- *
- * _.random(0, 5);
- * // => an integer between 0 and 5
- *
- * _.random(5);
- * // => also an integer between 0 and 5
- *
- * _.random(5, true);
- * // => a floating-point number between 0 and 5
- *
- * _.random(1.2, 5.2);
- * // => a floating-point number between 1.2 and 5.2
- */
-function random(lower, upper, floating) {
-  if (floating && typeof floating != 'boolean' && isIterateeCall(lower, upper, floating)) {
-    upper = floating = undefined;
-  }
-  if (floating === undefined) {
-    if (typeof upper == 'boolean') {
-      floating = upper;
-      upper = undefined;
-    }
-    else if (typeof lower == 'boolean') {
-      floating = lower;
-      lower = undefined;
-    }
-  }
-  if (lower === undefined && upper === undefined) {
-    lower = 0;
-    upper = 1;
-  }
-  else {
-    lower = toFinite(lower);
-    if (upper === undefined) {
-      upper = lower;
-      lower = 0;
-    } else {
-      upper = toFinite(upper);
-    }
-  }
-  if (lower > upper) {
-    var temp = lower;
-    lower = upper;
-    upper = temp;
-  }
-  if (floating || lower % 1 || upper % 1) {
-    var rand = nativeRandom();
-    return nativeMin(lower + (rand * (upper - lower + freeParseFloat('1e-' + ((rand + '').length - 1)))), upper);
-  }
-  return baseRandom(lower, upper);
-}
-
-module.exports = random;
-
-
-/***/ }),
+/* 62 */,
 /* 63 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -70043,332 +69956,689 @@ module.exports = isObjectLike;
 
 
 /***/ }),
-/* 263 */
-/***/ (function(module, exports) {
-
-/* Built-in method references for those with the same name as other `lodash` methods. */
-var nativeFloor = Math.floor,
-    nativeRandom = Math.random;
-
-/**
- * The base implementation of `_.random` without support for returning
- * floating-point numbers.
- *
- * @private
- * @param {number} lower The lower bound.
- * @param {number} upper The upper bound.
- * @returns {number} Returns the random number.
- */
-function baseRandom(lower, upper) {
-  return lower + nativeFloor(nativeRandom() * (upper - lower + 1));
-}
-
-module.exports = baseRandom;
-
-
-/***/ }),
-/* 264 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var eq = __webpack_require__(265),
-    isArrayLike = __webpack_require__(266),
-    isIndex = __webpack_require__(269),
-    isObject = __webpack_require__(127);
-
-/**
- * Checks if the given arguments are from an iteratee call.
- *
- * @private
- * @param {*} value The potential iteratee value argument.
- * @param {*} index The potential iteratee index or key argument.
- * @param {*} object The potential iteratee object argument.
- * @returns {boolean} Returns `true` if the arguments are from an iteratee call,
- *  else `false`.
- */
-function isIterateeCall(value, index, object) {
-  if (!isObject(object)) {
-    return false;
-  }
-  var type = typeof index;
-  if (type == 'number'
-        ? (isArrayLike(object) && isIndex(index, object.length))
-        : (type == 'string' && index in object)
-      ) {
-    return eq(object[index], value);
-  }
-  return false;
-}
-
-module.exports = isIterateeCall;
-
-
-/***/ }),
-/* 265 */
-/***/ (function(module, exports) {
-
-/**
- * Performs a
- * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
- * comparison between two values to determine if they are equivalent.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to compare.
- * @param {*} other The other value to compare.
- * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
- * @example
- *
- * var object = { 'a': 1 };
- * var other = { 'a': 1 };
- *
- * _.eq(object, object);
- * // => true
- *
- * _.eq(object, other);
- * // => false
- *
- * _.eq('a', 'a');
- * // => true
- *
- * _.eq('a', Object('a'));
- * // => false
- *
- * _.eq(NaN, NaN);
- * // => true
- */
-function eq(value, other) {
-  return value === other || (value !== value && other !== other);
-}
-
-module.exports = eq;
-
-
-/***/ }),
-/* 266 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var isFunction = __webpack_require__(267),
-    isLength = __webpack_require__(268);
-
-/**
- * Checks if `value` is array-like. A value is considered array-like if it's
- * not a function and has a `value.length` that's an integer greater than or
- * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
- * @example
- *
- * _.isArrayLike([1, 2, 3]);
- * // => true
- *
- * _.isArrayLike(document.body.children);
- * // => true
- *
- * _.isArrayLike('abc');
- * // => true
- *
- * _.isArrayLike(_.noop);
- * // => false
- */
-function isArrayLike(value) {
-  return value != null && isLength(value.length) && !isFunction(value);
-}
-
-module.exports = isArrayLike;
-
-
-/***/ }),
-/* 267 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var baseGetTag = __webpack_require__(143),
-    isObject = __webpack_require__(127);
-
-/** `Object#toString` result references. */
-var asyncTag = '[object AsyncFunction]',
-    funcTag = '[object Function]',
-    genTag = '[object GeneratorFunction]',
-    proxyTag = '[object Proxy]';
-
-/**
- * Checks if `value` is classified as a `Function` object.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a function, else `false`.
- * @example
- *
- * _.isFunction(_);
- * // => true
- *
- * _.isFunction(/abc/);
- * // => false
- */
-function isFunction(value) {
-  if (!isObject(value)) {
-    return false;
-  }
-  // The use of `Object#toString` avoids issues with the `typeof` operator
-  // in Safari 9 which returns 'object' for typed arrays and other constructors.
-  var tag = baseGetTag(value);
-  return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
-}
-
-module.exports = isFunction;
-
-
-/***/ }),
-/* 268 */
-/***/ (function(module, exports) {
-
-/** Used as references for various `Number` constants. */
-var MAX_SAFE_INTEGER = 9007199254740991;
-
-/**
- * Checks if `value` is a valid array-like length.
- *
- * **Note:** This method is loosely based on
- * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
- * @example
- *
- * _.isLength(3);
- * // => true
- *
- * _.isLength(Number.MIN_VALUE);
- * // => false
- *
- * _.isLength(Infinity);
- * // => false
- *
- * _.isLength('3');
- * // => false
- */
-function isLength(value) {
-  return typeof value == 'number' &&
-    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
-}
-
-module.exports = isLength;
-
-
-/***/ }),
-/* 269 */
-/***/ (function(module, exports) {
-
-/** Used as references for various `Number` constants. */
-var MAX_SAFE_INTEGER = 9007199254740991;
-
-/** Used to detect unsigned integer values. */
-var reIsUint = /^(?:0|[1-9]\d*)$/;
-
-/**
- * Checks if `value` is a valid array-like index.
- *
- * @private
- * @param {*} value The value to check.
- * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
- * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
- */
-function isIndex(value, length) {
-  var type = typeof value;
-  length = length == null ? MAX_SAFE_INTEGER : length;
-
-  return !!length &&
-    (type == 'number' ||
-      (type != 'symbol' && reIsUint.test(value))) &&
-        (value > -1 && value % 1 == 0 && value < length);
-}
-
-module.exports = isIndex;
-
-
-/***/ }),
-/* 270 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var toNumber = __webpack_require__(142);
-
-/** Used as references for various `Number` constants. */
-var INFINITY = 1 / 0,
-    MAX_INTEGER = 1.7976931348623157e+308;
-
-/**
- * Converts `value` to a finite number.
- *
- * @static
- * @memberOf _
- * @since 4.12.0
- * @category Lang
- * @param {*} value The value to convert.
- * @returns {number} Returns the converted number.
- * @example
- *
- * _.toFinite(3.2);
- * // => 3.2
- *
- * _.toFinite(Number.MIN_VALUE);
- * // => 5e-324
- *
- * _.toFinite(Infinity);
- * // => 1.7976931348623157e+308
- *
- * _.toFinite('3.2');
- * // => 3.2
- */
-function toFinite(value) {
-  if (!value) {
-    return value === 0 ? value : 0;
-  }
-  value = toNumber(value);
-  if (value === INFINITY || value === -INFINITY) {
-    var sign = (value < 0 ? -1 : 1);
-    return sign * MAX_INTEGER;
-  }
-  return value === value ? value : 0;
-}
-
-module.exports = toFinite;
-
-
-/***/ }),
+/* 263 */,
+/* 264 */,
+/* 265 */,
+/* 266 */,
+/* 267 */,
+/* 268 */,
+/* 269 */,
+/* 270 */,
 /* 271 */,
-/* 272 */
+/* 272 */,
+/* 273 */,
+/* 274 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var lodash_random__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(62);
-/* harmony import */ var lodash_random__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash_random__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(0);
-/* harmony import */ var ___WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(63);
-/* harmony import */ var _lib_WebGLApp_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(141);
-/* harmony import */ var _lib_AssetManager_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(44);
+
+// EXTERNAL MODULE: ./node_modules/three/build/three.module.js
+var three_module = __webpack_require__(0);
+
+// CONCATENATED MODULE: ./node_modules/three/examples/jsm/utils/BufferGeometryUtils.js
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+
+
+var BufferGeometryUtils = {
+
+	computeTangents: function ( geometry ) {
+
+		var index = geometry.index;
+		var attributes = geometry.attributes;
+
+		// based on http://www.terathon.com/code/tangent.html
+		// (per vertex tangents)
+
+		if ( index === null ||
+			 attributes.position === undefined ||
+			 attributes.normal === undefined ||
+			 attributes.uv === undefined ) {
+
+			console.warn( 'THREE.BufferGeometry: Missing required attributes (index, position, normal or uv) in BufferGeometry.computeTangents()' );
+			return;
+
+		}
+
+		var indices = index.array;
+		var positions = attributes.position.array;
+		var normals = attributes.normal.array;
+		var uvs = attributes.uv.array;
+
+		var nVertices = positions.length / 3;
+
+		if ( attributes.tangent === undefined ) {
+
+			geometry.setAttribute( 'tangent', new three_module["g" /* BufferAttribute */]( new Float32Array( 4 * nVertices ), 4 ) );
+
+		}
+
+		var tangents = attributes.tangent.array;
+
+		var tan1 = [], tan2 = [];
+
+		for ( var i = 0; i < nVertices; i ++ ) {
+
+			tan1[ i ] = new three_module["Kb" /* Vector3 */]();
+			tan2[ i ] = new three_module["Kb" /* Vector3 */]();
+
+		}
+
+		var vA = new three_module["Kb" /* Vector3 */](),
+			vB = new three_module["Kb" /* Vector3 */](),
+			vC = new three_module["Kb" /* Vector3 */](),
+
+			uvA = new three_module["Jb" /* Vector2 */](),
+			uvB = new three_module["Jb" /* Vector2 */](),
+			uvC = new three_module["Jb" /* Vector2 */](),
+
+			sdir = new three_module["Kb" /* Vector3 */](),
+			tdir = new three_module["Kb" /* Vector3 */]();
+
+		function handleTriangle( a, b, c ) {
+
+			vA.fromArray( positions, a * 3 );
+			vB.fromArray( positions, b * 3 );
+			vC.fromArray( positions, c * 3 );
+
+			uvA.fromArray( uvs, a * 2 );
+			uvB.fromArray( uvs, b * 2 );
+			uvC.fromArray( uvs, c * 2 );
+
+			var x1 = vB.x - vA.x;
+			var x2 = vC.x - vA.x;
+
+			var y1 = vB.y - vA.y;
+			var y2 = vC.y - vA.y;
+
+			var z1 = vB.z - vA.z;
+			var z2 = vC.z - vA.z;
+
+			var s1 = uvB.x - uvA.x;
+			var s2 = uvC.x - uvA.x;
+
+			var t1 = uvB.y - uvA.y;
+			var t2 = uvC.y - uvA.y;
+
+			var r = 1.0 / ( s1 * t2 - s2 * t1 );
+
+			sdir.set(
+				( t2 * x1 - t1 * x2 ) * r,
+				( t2 * y1 - t1 * y2 ) * r,
+				( t2 * z1 - t1 * z2 ) * r
+			);
+
+			tdir.set(
+				( s1 * x2 - s2 * x1 ) * r,
+				( s1 * y2 - s2 * y1 ) * r,
+				( s1 * z2 - s2 * z1 ) * r
+			);
+
+			tan1[ a ].add( sdir );
+			tan1[ b ].add( sdir );
+			tan1[ c ].add( sdir );
+
+			tan2[ a ].add( tdir );
+			tan2[ b ].add( tdir );
+			tan2[ c ].add( tdir );
+
+		}
+
+		var groups = geometry.groups;
+
+		if ( groups.length === 0 ) {
+
+			groups = [ {
+				start: 0,
+				count: indices.length
+			} ];
+
+		}
+
+		for ( var i = 0, il = groups.length; i < il; ++ i ) {
+
+			var group = groups[ i ];
+
+			var start = group.start;
+			var count = group.count;
+
+			for ( var j = start, jl = start + count; j < jl; j += 3 ) {
+
+				handleTriangle(
+					indices[ j + 0 ],
+					indices[ j + 1 ],
+					indices[ j + 2 ]
+				);
+
+			}
+
+		}
+
+		var tmp = new three_module["Kb" /* Vector3 */](), tmp2 = new three_module["Kb" /* Vector3 */]();
+		var n = new three_module["Kb" /* Vector3 */](), n2 = new three_module["Kb" /* Vector3 */]();
+		var w, t, test;
+
+		function handleVertex( v ) {
+
+			n.fromArray( normals, v * 3 );
+			n2.copy( n );
+
+			t = tan1[ v ];
+
+			// Gram-Schmidt orthogonalize
+
+			tmp.copy( t );
+			tmp.sub( n.multiplyScalar( n.dot( t ) ) ).normalize();
+
+			// Calculate handedness
+
+			tmp2.crossVectors( n2, t );
+			test = tmp2.dot( tan2[ v ] );
+			w = ( test < 0.0 ) ? - 1.0 : 1.0;
+
+			tangents[ v * 4 ] = tmp.x;
+			tangents[ v * 4 + 1 ] = tmp.y;
+			tangents[ v * 4 + 2 ] = tmp.z;
+			tangents[ v * 4 + 3 ] = w;
+
+		}
+
+		for ( var i = 0, il = groups.length; i < il; ++ i ) {
+
+			var group = groups[ i ];
+
+			var start = group.start;
+			var count = group.count;
+
+			for ( var j = start, jl = start + count; j < jl; j += 3 ) {
+
+				handleVertex( indices[ j + 0 ] );
+				handleVertex( indices[ j + 1 ] );
+				handleVertex( indices[ j + 2 ] );
+
+			}
+
+		}
+
+	},
+
+	/**
+	 * @param  {Array<BufferGeometry>} geometries
+	 * @param  {Boolean} useGroups
+	 * @return {BufferGeometry}
+	 */
+	mergeBufferGeometries: function ( geometries, useGroups ) {
+
+		var isIndexed = geometries[ 0 ].index !== null;
+
+		var attributesUsed = new Set( Object.keys( geometries[ 0 ].attributes ) );
+		var morphAttributesUsed = new Set( Object.keys( geometries[ 0 ].morphAttributes ) );
+
+		var attributes = {};
+		var morphAttributes = {};
+
+		var morphTargetsRelative = geometries[ 0 ].morphTargetsRelative;
+
+		var mergedGeometry = new three_module["h" /* BufferGeometry */]();
+
+		var offset = 0;
+
+		for ( var i = 0; i < geometries.length; ++ i ) {
+
+			var geometry = geometries[ i ];
+
+			// ensure that all geometries are indexed, or none
+
+			if ( isIndexed !== ( geometry.index !== null ) ) return null;
+
+			// gather attributes, exit early if they're different
+
+			for ( var name in geometry.attributes ) {
+
+				if ( ! attributesUsed.has( name ) ) return null;
+
+				if ( attributes[ name ] === undefined ) attributes[ name ] = [];
+
+				attributes[ name ].push( geometry.attributes[ name ] );
+
+			}
+
+			// gather morph attributes, exit early if they're different
+
+			if ( morphTargetsRelative !== geometry.morphTargetsRelative ) return null;
+
+			for ( var name in geometry.morphAttributes ) {
+
+				if ( ! morphAttributesUsed.has( name ) ) return null;
+
+				if ( morphAttributes[ name ] === undefined ) morphAttributes[ name ] = [];
+
+				morphAttributes[ name ].push( geometry.morphAttributes[ name ] );
+
+			}
+
+			// gather .userData
+
+			mergedGeometry.userData.mergedUserData = mergedGeometry.userData.mergedUserData || [];
+			mergedGeometry.userData.mergedUserData.push( geometry.userData );
+
+			if ( useGroups ) {
+
+				var count;
+
+				if ( isIndexed ) {
+
+					count = geometry.index.count;
+
+				} else if ( geometry.attributes.position !== undefined ) {
+
+					count = geometry.attributes.position.count;
+
+				} else {
+
+					return null;
+
+				}
+
+				mergedGeometry.addGroup( offset, count, i );
+
+				offset += count;
+
+			}
+
+		}
+
+		// merge indices
+
+		if ( isIndexed ) {
+
+			var indexOffset = 0;
+			var mergedIndex = [];
+
+			for ( var i = 0; i < geometries.length; ++ i ) {
+
+				var index = geometries[ i ].index;
+
+				for ( var j = 0; j < index.count; ++ j ) {
+
+					mergedIndex.push( index.getX( j ) + indexOffset );
+
+				}
+
+				indexOffset += geometries[ i ].attributes.position.count;
+
+			}
+
+			mergedGeometry.setIndex( mergedIndex );
+
+		}
+
+		// merge attributes
+
+		for ( var name in attributes ) {
+
+			var mergedAttribute = this.mergeBufferAttributes( attributes[ name ] );
+
+			if ( ! mergedAttribute ) return null;
+
+			mergedGeometry.setAttribute( name, mergedAttribute );
+
+		}
+
+		// merge morph attributes
+
+		for ( var name in morphAttributes ) {
+
+			var numMorphTargets = morphAttributes[ name ][ 0 ].length;
+
+			if ( numMorphTargets === 0 ) break;
+
+			mergedGeometry.morphAttributes = mergedGeometry.morphAttributes || {};
+			mergedGeometry.morphAttributes[ name ] = [];
+
+			for ( var i = 0; i < numMorphTargets; ++ i ) {
+
+				var morphAttributesToMerge = [];
+
+				for ( var j = 0; j < morphAttributes[ name ].length; ++ j ) {
+
+					morphAttributesToMerge.push( morphAttributes[ name ][ j ][ i ] );
+
+				}
+
+				var mergedMorphAttribute = this.mergeBufferAttributes( morphAttributesToMerge );
+
+				if ( ! mergedMorphAttribute ) return null;
+
+				mergedGeometry.morphAttributes[ name ].push( mergedMorphAttribute );
+
+			}
+
+		}
+
+		return mergedGeometry;
+
+	},
+
+	/**
+	 * @param {Array<BufferAttribute>} attributes
+	 * @return {BufferAttribute}
+	 */
+	mergeBufferAttributes: function ( attributes ) {
+
+		var TypedArray;
+		var itemSize;
+		var normalized;
+		var arrayLength = 0;
+
+		for ( var i = 0; i < attributes.length; ++ i ) {
+
+			var attribute = attributes[ i ];
+
+			if ( attribute.isInterleavedBufferAttribute ) return null;
+
+			if ( TypedArray === undefined ) TypedArray = attribute.array.constructor;
+			if ( TypedArray !== attribute.array.constructor ) return null;
+
+			if ( itemSize === undefined ) itemSize = attribute.itemSize;
+			if ( itemSize !== attribute.itemSize ) return null;
+
+			if ( normalized === undefined ) normalized = attribute.normalized;
+			if ( normalized !== attribute.normalized ) return null;
+
+			arrayLength += attribute.array.length;
+
+		}
+
+		var array = new TypedArray( arrayLength );
+		var offset = 0;
+
+		for ( var i = 0; i < attributes.length; ++ i ) {
+
+			array.set( attributes[ i ].array, offset );
+
+			offset += attributes[ i ].array.length;
+
+		}
+
+		return new three_module["g" /* BufferAttribute */]( array, itemSize, normalized );
+
+	},
+
+	/**
+	 * @param {Array<BufferAttribute>} attributes
+	 * @return {Array<InterleavedBufferAttribute>}
+	 */
+	interleaveAttributes: function ( attributes ) {
+
+		// Interleaves the provided attributes into an InterleavedBuffer and returns
+		// a set of InterleavedBufferAttributes for each attribute
+		var TypedArray;
+		var arrayLength = 0;
+		var stride = 0;
+
+		// calculate the the length and type of the interleavedBuffer
+		for ( var i = 0, l = attributes.length; i < l; ++ i ) {
+
+			var attribute = attributes[ i ];
+
+			if ( TypedArray === undefined ) TypedArray = attribute.array.constructor;
+			if ( TypedArray !== attribute.array.constructor ) {
+
+				console.warn( 'AttributeBuffers of different types cannot be interleaved' );
+				return null;
+
+			}
+
+			arrayLength += attribute.array.length;
+			stride += attribute.itemSize;
+
+		}
+
+		// Create the set of buffer attributes
+		var interleavedBuffer = new three_module["C" /* InterleavedBuffer */]( new TypedArray( arrayLength ), stride );
+		var offset = 0;
+		var res = [];
+		var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
+		var setters = [ 'setX', 'setY', 'setZ', 'setW' ];
+
+		for ( var j = 0, l = attributes.length; j < l; j ++ ) {
+
+			var attribute = attributes[ j ];
+			var itemSize = attribute.itemSize;
+			var count = attribute.count;
+			var iba = new three_module["D" /* InterleavedBufferAttribute */]( interleavedBuffer, itemSize, offset, attribute.normalized );
+			res.push( iba );
+
+			offset += itemSize;
+
+			// Move the data for each attribute into the new interleavedBuffer
+			// at the appropriate offset
+			for ( var c = 0; c < count; c ++ ) {
+
+				for ( var k = 0; k < itemSize; k ++ ) {
+
+					iba[ setters[ k ] ]( c, attribute[ getters[ k ] ]( c ) );
+
+				}
+
+			}
+
+		}
+
+		return res;
+
+	},
+
+	/**
+	 * @param {Array<BufferGeometry>} geometry
+	 * @return {number}
+	 */
+	estimateBytesUsed: function ( geometry ) {
+
+		// Return the estimated memory used by this geometry in bytes
+		// Calculate using itemSize, count, and BYTES_PER_ELEMENT to account
+		// for InterleavedBufferAttributes.
+		var mem = 0;
+		for ( var name in geometry.attributes ) {
+
+			var attr = geometry.getAttribute( name );
+			mem += attr.count * attr.itemSize * attr.array.BYTES_PER_ELEMENT;
+
+		}
+
+		var indices = geometry.getIndex();
+		mem += indices ? indices.count * indices.itemSize * indices.array.BYTES_PER_ELEMENT : 0;
+		return mem;
+
+	},
+
+	/**
+	 * @param {BufferGeometry} geometry
+	 * @param {number} tolerance
+	 * @return {BufferGeometry>}
+	 */
+	mergeVertices: function ( geometry, tolerance = 1e-4 ) {
+
+		tolerance = Math.max( tolerance, Number.EPSILON );
+
+		// Generate an index buffer if the geometry doesn't have one, or optimize it
+		// if it's already available.
+		var hashToIndex = {};
+		var indices = geometry.getIndex();
+		var positions = geometry.getAttribute( 'position' );
+		var vertexCount = indices ? indices.count : positions.count;
+
+		// next value for triangle indices
+		var nextIndex = 0;
+
+		// attributes and new attribute arrays
+		var attributeNames = Object.keys( geometry.attributes );
+		var attrArrays = {};
+		var morphAttrsArrays = {};
+		var newIndices = [];
+		var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
+
+		// initialize the arrays
+		for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
+
+			var name = attributeNames[ i ];
+
+			attrArrays[ name ] = [];
+
+			var morphAttr = geometry.morphAttributes[ name ];
+			if ( morphAttr ) {
+
+				morphAttrsArrays[ name ] = new Array( morphAttr.length ).fill().map( () => [] );
+
+			}
+
+		}
+
+		// convert the error tolerance to an amount of decimal places to truncate to
+		var decimalShift = Math.log10( 1 / tolerance );
+		var shiftMultiplier = Math.pow( 10, decimalShift );
+		for ( var i = 0; i < vertexCount; i ++ ) {
+
+			var index = indices ? indices.getX( i ) : i;
+
+			// Generate a hash for the vertex attributes at the current index 'i'
+			var hash = '';
+			for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
+
+				var name = attributeNames[ j ];
+				var attribute = geometry.getAttribute( name );
+				var itemSize = attribute.itemSize;
+
+				for ( var k = 0; k < itemSize; k ++ ) {
+
+					// double tilde truncates the decimal value
+					hash += `${ ~ ~ ( attribute[ getters[ k ] ]( index ) * shiftMultiplier ) },`;
+
+				}
+
+			}
+
+			// Add another reference to the vertex if it's already
+			// used by another index
+			if ( hash in hashToIndex ) {
+
+				newIndices.push( hashToIndex[ hash ] );
+
+			} else {
+
+				// copy data to the new index in the attribute arrays
+				for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
+
+					var name = attributeNames[ j ];
+					var attribute = geometry.getAttribute( name );
+					var morphAttr = geometry.morphAttributes[ name ];
+					var itemSize = attribute.itemSize;
+					var newarray = attrArrays[ name ];
+					var newMorphArrays = morphAttrsArrays[ name ];
+
+					for ( var k = 0; k < itemSize; k ++ ) {
+
+						var getterFunc = getters[ k ];
+						newarray.push( attribute[ getterFunc ]( index ) );
+
+						if ( morphAttr ) {
+
+							for ( var m = 0, ml = morphAttr.length; m < ml; m ++ ) {
+
+								newMorphArrays[ m ].push( morphAttr[ m ][ getterFunc ]( index ) );
+
+							}
+
+						}
+
+					}
+
+				}
+
+				hashToIndex[ hash ] = nextIndex;
+				newIndices.push( nextIndex );
+				nextIndex ++;
+
+			}
+
+		}
+
+		// Generate typed arrays from new attribute arrays and update
+		// the attributeBuffers
+		const result = geometry.clone();
+		for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
+
+			var name = attributeNames[ i ];
+			var oldAttribute = geometry.getAttribute( name );
+
+			var buffer = new oldAttribute.array.constructor( attrArrays[ name ] );
+			var attribute = new three_module["g" /* BufferAttribute */]( buffer, oldAttribute.itemSize, oldAttribute.normalized );
+
+			result.setAttribute( name, attribute );
+
+			// Update the attribute arrays
+			if ( name in morphAttrsArrays ) {
+
+				for ( var j = 0; j < morphAttrsArrays[ name ].length; j ++ ) {
+
+					var oldMorphAttribute = geometry.morphAttributes[ name ][ j ];
+
+					var buffer = new oldMorphAttribute.array.constructor( morphAttrsArrays[ name ][ j ] );
+					var morphAttribute = new three_module["g" /* BufferAttribute */]( buffer, oldMorphAttribute.itemSize, oldMorphAttribute.normalized );
+					result.morphAttributes[ name ][ j ] = morphAttribute;
+
+				}
+
+			}
+
+		}
+
+		// indices
+
+		result.setIndex( newIndices );
+
+		return result;
+
+	}
+
+};
+
+
+
+// EXTERNAL MODULE: ./build/ProjectedMaterial.module.js
+var ProjectedMaterial_module = __webpack_require__(63);
+
+// EXTERNAL MODULE: ./examples/lib/WebGLApp.js + 6 modules
+var WebGLApp = __webpack_require__(141);
+
+// EXTERNAL MODULE: ./examples/lib/AssetManager.js + 7 modules
+var AssetManager = __webpack_require__(44);
+
+// CONCATENATED MODULE: ./examples/3d-model.js
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "extractGeometry", function() { return extractGeometry; });
 
 
 
 
- // grab our canvas
+ // extract all geometry from a gltf scene
+
+function extractGeometry(gltf) {
+  var geometries = [];
+  gltf.traverse(function (child) {
+    if (child.isMesh) {
+      geometries.push(child.geometry);
+    }
+  });
+  return BufferGeometryUtils.mergeBufferGeometries(geometries);
+} // grab our canvas
 
 var canvas = document.querySelector('#app'); // setup the WebGLRenderer
 
-var webgl = new _lib_WebGLApp_js__WEBPACK_IMPORTED_MODULE_3__[/* default */ "a"]({
+var webgl = new WebGLApp["a" /* default */]({
   canvas: canvas,
   // set the scene background color
   background: '#E6E6E6',
@@ -70383,60 +70653,46 @@ window.webgl = webgl; // hide canvas
 
 webgl.canvas.style.visibility = 'hidden'; // preload the texture
 
-var textureKey = _lib_AssetManager_js__WEBPACK_IMPORTED_MODULE_4__[/* default */ "a"].queue({
-  url: 'images/charles-unsplash.jpg',
+var textureKey = AssetManager["a" /* default */].queue({
+  url: 'images/uv.jpg',
   type: 'texture'
+}); // preload the model
+
+var modelsKey = AssetManager["a" /* default */].queue({
+  url: 'models/suzanne.gltf',
+  type: 'gltf'
 }); // load any queued assets
 
-_lib_AssetManager_js__WEBPACK_IMPORTED_MODULE_4__[/* default */ "a"].load({
+AssetManager["a" /* default */].load({
   renderer: webgl.renderer
 }).then(function () {
   // show canvas
-  webgl.canvas.style.visibility = ''; // breate a bunch of meshes
+  webgl.canvas.style.visibility = ''; // create the mesh with the projected material
 
-  var elements = new three__WEBPACK_IMPORTED_MODULE_1__[/* Group */ "x"]();
-  var NUM_ELEMENTS = 50;
+  var gltf = AssetManager["a" /* default */].get(modelsKey).scene.clone();
+  var geometry = extractGeometry(gltf);
+  var material = new ProjectedMaterial_module["b" /* default */]({
+    camera: webgl.camera,
+    texture: AssetManager["a" /* default */].get(textureKey),
+    color: '#cccccc',
+    textureScale: 0.8
+  });
+  var mesh = new three_module["W" /* Mesh */](geometry, material);
+  webgl.scene.add(mesh); // move the mesh any way you want!
+  // (in this case no translations/rotations)
+  // and when you're ready project the texture!
 
-  for (var i = 0; i < NUM_ELEMENTS; i++) {
-    var geometry = new three__WEBPACK_IMPORTED_MODULE_1__[/* IcosahedronGeometry */ "z"](lodash_random__WEBPACK_IMPORTED_MODULE_0___default()(0.1, 0.5));
-    var material = new ___WEBPACK_IMPORTED_MODULE_2__[/* default */ "b"]({
-      // use the scene camera itself
-      camera: webgl.camera,
-      texture: _lib_AssetManager_js__WEBPACK_IMPORTED_MODULE_4__[/* default */ "a"].get(textureKey),
-      color: '#3149D5',
-      textureScale: 0.8
-    });
-    var element = new three__WEBPACK_IMPORTED_MODULE_1__[/* Mesh */ "W"](geometry, material); // move the meshes any way you want!
+  Object(ProjectedMaterial_module["c" /* project */])(mesh); // rotate for demo purposes
 
-    if (i < NUM_ELEMENTS * 0.3) {
-      element.position.x = lodash_random__WEBPACK_IMPORTED_MODULE_0___default()(-0.5, 0.5);
-      element.position.y = lodash_random__WEBPACK_IMPORTED_MODULE_0___default()(-1.1, 0.5);
-      element.position.z = lodash_random__WEBPACK_IMPORTED_MODULE_0___default()(-0.3, 0.3);
-      element.scale.multiplyScalar(1.4);
-    } else {
-      element.position.x = lodash_random__WEBPACK_IMPORTED_MODULE_0___default()(-1, 1, true);
-      element.position.y = lodash_random__WEBPACK_IMPORTED_MODULE_0___default()(-2, 2, true);
-      element.position.z = lodash_random__WEBPACK_IMPORTED_MODULE_0___default()(-0.5, 0.5);
-    }
-
-    element.rotation.x = lodash_random__WEBPACK_IMPORTED_MODULE_0___default()(0, Math.PI * 2);
-    element.rotation.y = lodash_random__WEBPACK_IMPORTED_MODULE_0___default()(0, Math.PI * 2);
-    element.rotation.z = lodash_random__WEBPACK_IMPORTED_MODULE_0___default()(0, Math.PI * 2); // and when you're ready project the texture!
-
-    Object(___WEBPACK_IMPORTED_MODULE_2__[/* project */ "c"])(element);
-    elements.add(element);
-  }
-
-  webgl.scene.add(elements);
-  elements.rotation.y = Math.PI / 2;
+  mesh.rotation.y = Math.PI / 3;
   webgl.onUpdate(function () {
-    elements.rotation.y -= 0.003;
+    mesh.rotation.y -= 0.003;
   }); // add lights
 
-  var directionalLight = new three__WEBPACK_IMPORTED_MODULE_1__[/* DirectionalLight */ "r"](0xffffff, 0.6);
+  var directionalLight = new three_module["r" /* DirectionalLight */](0xffffff, 0.6);
   directionalLight.position.set(0, 10, 10);
   webgl.scene.add(directionalLight);
-  var ambientLight = new three__WEBPACK_IMPORTED_MODULE_1__[/* AmbientLight */ "a"](0xffffff, 0.6);
+  var ambientLight = new three_module["a" /* AmbientLight */](0xffffff, 0.6);
   webgl.scene.add(ambientLight); // start animation loop
 
   webgl.start();
@@ -70445,4 +70701,4 @@ _lib_AssetManager_js__WEBPACK_IMPORTED_MODULE_4__[/* default */ "a"].load({
 
 /***/ })
 /******/ ]);
-//# sourceMappingURL=same-camera.bundle.js.map
+//# sourceMappingURL=3d-model.bundle.js.map

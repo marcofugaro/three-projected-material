@@ -5,7 +5,7 @@ export default {
     {
       format: 'umd',
       globals: {
-        'three': 'THREE',
+        three: 'THREE',
       },
       name: 'ProjectedMaterial',
       exports: 'named',

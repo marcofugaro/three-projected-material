@@ -11,6 +11,7 @@ module.exports = {
     basic: './examples/basic.js',
     'same-camera': './examples/same-camera.js',
     instancing: './examples/instancing.js',
+    '3d-model': './examples/3d-model.js',
   },
   output: {
     path: path.resolve(__dirname, './examples'),
