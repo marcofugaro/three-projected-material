@@ -1,7 +1,7 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('three')) :
   typeof define === 'function' && define.amd ? define(['exports', 'three'], factory) :
-  (global = global || self, factory(global.ProjectedMaterial = {}, global.THREE));
+  (global = global || self, factory(global.projectedMaterial = {}, global.THREE));
 }(this, (function (exports, THREE) { 'use strict';
 
   function monkeyPatch(shader, { header = '', main = '', ...replaces }) {
@@ -22,7 +22,15 @@
   }
 
   class ProjectedMaterial extends THREE.ShaderMaterial {
-    constructor({ camera, texture, color = 0xffffff, textureScale = 1, instanced = false, cover = false, ...options } = {}) {
+    constructor({
+      camera,
+      texture,
+      color = 0xffffff,
+      textureScale = 1,
+      instanced = false,
+      cover = false,
+      ...options
+    } = {}) {
       if (!texture || !texture.isTexture) {
         throw new Error('Invalid texture passed to the ProjectedMaterial')
       }
@@ -44,7 +52,12 @@
       const projPosition = camera.position.clone();
 
       // scale to keep the image proportions and apply textureScale
-      const [widthScaled, heightScaled] = computeScaledDimensions(texture, camera, textureScale, cover);
+      const [widthScaled, heightScaled] = computeScaledDimensions(
+        texture,
+        camera,
+        textureScale,
+        cover
+      );
 
       super({
         ...options,
@@ -158,7 +171,12 @@
       window.addEventListener('resize', () => {
         this.uniforms.projectionMatrixCamera.value.copy(camera.projectionMatrix);
 
-        const [widthScaledNew, heightScaledNew] = computeScaledDimensions(texture, camera, textureScale, cover);
+        const [widthScaledNew, heightScaledNew] = computeScaledDimensions(
+          texture,
+          camera,
+          textureScale,
+          cover
+        );
         this.uniforms.widthScaled.value = widthScaledNew;
         this.uniforms.heightScaled.value = heightScaledNew;
       });
@@ -176,7 +194,7 @@
     const heightCamera = widthCamera * (1 / ratioCamera);
     let widthScaled;
     let heightScaled;
-    if (cover ? (ratio > ratioCamera) : (ratio < ratioCamera)) {
+    if (cover ? ratio > ratioCamera : ratio < ratioCamera) {
       const width = heightCamera * ratio;
       widthScaled = 1 / ((width / widthCamera) * textureScale);
       heightScaled = 1 / textureScale;
@@ -223,7 +241,6 @@
     }
 
     if (!instancedMesh.material.instanced) {
-      console.log(instancedMesh.material);
       throw new Error(`Please pass 'instanced: true' to the ProjectedMaterial`)
     }
 

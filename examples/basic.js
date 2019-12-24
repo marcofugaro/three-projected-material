@@ -35,7 +35,7 @@ assets.load({ renderer: webgl.renderer }).then(() => {
 
   // create a new camera from which to project
   const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 3)
-  camera.position.set(2, 1.2, 0.5)
+  camera.position.set(-1, 1.2, 2)
   camera.lookAt(0, 0, 0)
 
   // add a camer frustum helper just for demostration purposes
@@ -53,7 +53,7 @@ assets.load({ renderer: webgl.renderer }).then(() => {
   webgl.scene.add(box)
 
   // move the mesh any way you want!
-  box.rotation.y = -Math.PI / 6
+  box.rotation.y = -Math.PI / 4
 
   // and when you're ready project the texture!
   project(box)

@@ -42,7 +42,7 @@ assets.load({ renderer: webgl.renderer }).then(() => {
   const width = visibleWidthAtZDepth(0, webgl.camera)
   const height = visibleHeightAtZDepth(0, webgl.camera)
 
-  // breate a bunch of instanced elements
+  // create a bunch of instanced elements
   const NUM_ELEMENTS = 1000
   const dummy = new THREE.Object3D()
 

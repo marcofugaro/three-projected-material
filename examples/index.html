@@ -4,50 +4,179 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>three-projected-material</title>
+    <meta
+      name="description"
+      content="Three.js Material which lets you do Texture Projection on a 3d Model"
+    />
+
+    <link href="https://unpkg.com/normalize.css@8.0.1/normalize.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700" rel="stylesheet" />
+    <style>
+      :root {
+        --primary: #3149d5;
+        --accent: #1ebe98;
+      }
+
+      body {
+        font-family: Open Sans, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      h1,
+      h2 {
+        font-weight: 600;
+      }
+
+      h1 {
+        font-size: 44px;
+      }
+
+      h2 {
+        font-size: 32px;
+        margin: 3rem 0 1rem;
+      }
+
+      a {
+        color: var(--primary);
+      }
+
+      a:hover {
+        color: var(--accent);
+      }
+
+      .cover {
+        color: white;
+        text-align: center;
+        line-height: 1.5;
+        padding: 6rem 2rem;
+        background: linear-gradient(-45deg, var(--primary), var(--accent));
+        background-size: 200% 200%;
+        animation: animated-gradient 7s ease infinite;
+      }
+
+      @keyframes animated-gradient {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      .cover h1 {
+        margin: 0 0 2rem;
+      }
+
+      .cover p {
+        font-size: 22px;
+      }
+
+      .container {
+        max-width: 54rem;
+        margin: 0 auto;
+        padding: 0 2rem 2rem;
+      }
+
+      @media (max-width: 44rem) {
+        .cover {
+          padding: 2rem 1rem;
+        }
+        .container {
+          padding: 0 1rem 2rem;
+        }
+        h1 {
+          font-size: 32px;
+        }
+        .cover p {
+          font-size: 18px;
+        }
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        grid-gap: 2rem;
+      }
+
+      .didascalia {
+        margin-top: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+
+      .title-link {
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+    </style>
   </head>
   <body>
-    <h1>three-projected-material</h1>
-    <h2>Documentation</h2>
-    <a href="https://github.com/marcofugaro/three-projected-material">Documentation on github</a>
-    <h2>Examples</h2>
-
+    <div class="cover">
+      <h1>three-projected-material</h1>
+      <p>Three.js Material which lets you do [Texture Projection]() on a 3d Model.</p>
+    </div>
     <div class="container">
-      <div>
-        <a href="/basic"><img src="https://placekitten.com/300/200"/></a>
-        <a href="/basic">Basic</a>
-        <a
-          href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/basic.js"
-          target="_blank"
-          >(source)</a
-        >
-      </div>
+      <h2>Documentation</h2>
+      <a href="https://github.com/marcofugaro/three-projected-material">Documentation on GitHub</a>
+      <h2>Examples</h2>
 
-      <div>
-        <a href="/same-camera"><img src="https://placekitten.com/300/200"/></a>
-        <a href="/same-camera">Same camera</a>
-        <a
-          href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/same-camera.js"
-          target="_blank"
-          >(source)</a
-        >
-      </div>
-      <div>
-        <a href="/instancing"><img src="https://placekitten.com/300/200"/></a>
-        <a href="/instancing">Instancing</a>
-        <a
-          href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/instancing.js"
-          target="_blank"
-          >(source)</a
-        >
-      </div>
-      <div>
-        <a href="/3d-model"><img src="https://placekitten.com/300/200"/></a>
-        <a href="/3d-model">3D Model</a>
-        <a
-          href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/3d-model.js"
-          target="_blank"
-          >(source)</a
-        >
+      <div class="grid">
+        <div>
+          <a href="/basic"><img src="images/example-basic.png"/></a>
+          <div class="didascalia">
+            <a href="/basic" class="title-link">Basic</a>
+            <a
+              href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/basic.js"
+              target="_blank"
+              >(source)</a
+            >
+          </div>
+        </div>
+
+        <div>
+          <a href="/same-camera"><img src="images/example-same-camera.png"/></a>
+          <div class="didascalia">
+            <a href="/same-camera" class="title-link">Same camera</a>
+            <a
+              href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/same-camera.js"
+              target="_blank"
+              >(source)</a
+            >
+          </div>
+        </div>
+        <div>
+          <a href="/instancing"><img src="images/example-instancing.png"/></a>
+          <div class="didascalia">
+            <a href="/instancing" class="title-link">Instancing</a>
+            <a
+              href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/instancing.js"
+              target="_blank"
+              >(source)</a
+            >
+          </div>
+        </div>
+        <div>
+          <a href="/3d-model"><img src="images/example-3d-model.png"/></a>
+          <div class="didascalia">
+            <a href="/3d-model" class="title-link">3D Model</a>
+            <a
+              href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/3d-model.js"
+              target="_blank"
+              >(source)</a
+            >
+          </div>
+        </div>
       </div>
     </div>
   </body>

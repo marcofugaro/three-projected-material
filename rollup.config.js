@@ -7,7 +7,7 @@ export default {
       globals: {
         three: 'THREE',
       },
-      name: 'ProjectedMaterial',
+      name: 'projectedMaterial',
       exports: 'named',
       file: 'build/ProjectedMaterial.js',
     },
