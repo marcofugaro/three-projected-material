@@ -13,7 +13,9 @@
   "scripts": {
     "build": "rollup -c",
     "start": "npx serve examples/",
-    "build-examples": "NODE_ENV=production webpack"
+    "build-examples": "NODE_ENV=production webpack",
+    "predeploy": "yarn build-examples",
+    "deploy": "gh-pages -d examples"
   },
   "peerDependencies": {
     "three": "^0.111.0"
@@ -31,6 +33,7 @@
     "detect-gpu": "^1.1.2",
     "eslint-config-accurapp": "^4.2.8",
     "event-hooks-webpack-plugin": "^2.1.4",
+    "gh-pages": "^2.1.1",
     "glslify-loader": "^2.0.0",
     "html-webpack-plugin": "^3.2.0",
     "image-promise": "^6.0.2",
