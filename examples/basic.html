@@ -9,10 +9,35 @@
         margin: 0;
         padding: 0;
       }
+
+      .source-fab {
+        display: block;
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        padding: 0.75rem;
+        border-radius: 50%;
+        background-color: #f1f1f1;
+        z-index: 999;
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+      }
+      .source-fab img {
+        display: block;
+        width: 20px;
+      }
     </style>
   </head>
   <body>
     <canvas id="app"></canvas>
+    <a
+      class="source-fab"
+      target="_blank"
+      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/basic.js"
+      title="View source code on GitHub"
+    >
+      <img src="images/source.svg" />
+    </a>
     <script src="basic.bundle.js"></script>
   </body>
 </html>
