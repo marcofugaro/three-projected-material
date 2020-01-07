@@ -2,9 +2,9 @@
 
 > Three.js Material which lets you do [Texture Projection](https://en.wikipedia.org/wiki/Projective_texture_mapping) on a 3d Model.
 
-[<img src="screenshot.png" width="600" >](https://marcofugaro.github.io/three-projected-material)
+[<img src="screenshot.png" width="600" >](https://marcofugaro.github.io/three-projected-material/)
 
-### [EXAMPLES](https://marcofugaro.github.io/three-projected-material)
+### [EXAMPLES](https://marcofugaro.github.io/three-projected-material/)
 
 ## Installation
 
@@ -110,7 +110,7 @@ for (let i = 0; i < NUM_ELEMENTS; i++) {
 webgl.scene.add(instancedMesh)
 ```
 
-If you want to see the remaining code, and other usages, check out the [examples](https://marcofugaro.github.io/three-projected-material).
+If you want to see the remaining code, and other usages, check out the [examples](https://marcofugaro.github.io/three-projected-material/).
 
 ## API
 
@@ -126,7 +126,7 @@ Create a new material to later use for a mesh.
 | `textureScale` | 1           | Make the texture bigger or smaller.                                                                                                                                                                                                                                                                                                               |
 | `cover`        | false       | Wheter the texture should act like [`background-size: cover`](https://css-tricks.com/almanac/properties/b/background-size/) on the projector frustum. By default it works like [`background-size: contain`](https://css-tricks.com/almanac/properties/b/background-size/).                                                                        |
 | `instanced`    | false       | Wether the material will be part of an [InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh). If this is true, [`allocateProjectionData()`](#allocateprojectiondatageometry-instancescount) and [`projectInstanceAt()`](#projectinstanceatindex-instancedmesh-matrixworld) must be used instead of [`project()`](#projectmesh). |
-| `opacity`      | 1           | The opacity of the material, works like the Three.js opacity.                                                                                                                                                                                                                                                                                     |
+| `opacity`      | 1           | The opacity of the material, works like the [`Material.opacity`](https://threejs.org/docs/#api/en/materials/Material.opacity).                                                                                                                                                                                                                    |
 
 ### project(mesh)
 
