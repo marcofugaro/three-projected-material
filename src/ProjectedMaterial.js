@@ -9,6 +9,7 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
     textureScale = 1,
     instanced = false,
     cover = false,
+    opacity = 1,
     ...options
   } = {}) {
     if (!texture || !texture.isTexture) {
@@ -54,6 +55,7 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
         projPosition: { type: 'v3', value: projPosition },
         widthScaled: { value: widthScaled },
         heightScaled: { value: heightScaled },
+        opacity: { value: opacity },
       },
 
       vertexShader: monkeyPatch(THREE.ShaderChunk['meshlambert_vert'], {
@@ -136,8 +138,9 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
             color = vec4(baseColor, 1.0);
           }
 
-          // TODO handle opacity
-          // vec4 diffuseColor = vec4( diffuse, opacity );
+          // opacity from three.js
+          color.a *= opacity;
+
           vec4 diffuseColor = color;
         `,
       }),

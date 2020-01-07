@@ -67,6 +67,7 @@ module.exports = {
   optimization: {
     // disable code splitting
     splitChunks: false,
+    minimize: false,
     minimizer: [
       new TerserJsPlugin({
         terserOptions: {

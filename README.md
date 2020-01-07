@@ -70,6 +70,11 @@ project(box)
 ProjectedMaterial also supports instanced objects via Three.js' [InstancedMesh](https://threejs.org/docs/index.html#api/en/objects/InstancedMesh), this is an example usage:
 
 ```js
+import ProjectedMaterial, {
+  allocateProjectionData,
+  projectInstanceAt,
+} from 'three-projected-material'
+
 const NUM_ELEMENTS = 1000
 const dummy = new THREE.Object3D()
 
@@ -121,6 +126,7 @@ Create a new material to later use for a mesh.
 | `textureScale` | 1           | Make the texture bigger or smaller.                                                                                                                                                                                                                                                                                                               |
 | `cover`        | false       | Wheter the texture should act like [`background-size: cover`](https://css-tricks.com/almanac/properties/b/background-size/) on the projector frustum. By default it works like [`background-size: contain`](https://css-tricks.com/almanac/properties/b/background-size/).                                                                        |
 | `instanced`    | false       | Wether the material will be part of an [InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh). If this is true, [`allocateProjectionData()`](#allocateprojectiondatageometry-instancescount) and [`projectInstanceAt()`](#projectinstanceatindex-instancedmesh-matrixworld) must be used instead of [`project()`](#projectmesh). |
+| `opacity`      | 1           | The opacity of the material, works like the Three.js opacity.                                                                                                                                                                                                                                                                                     |
 
 ### project(mesh)
 
@@ -162,6 +168,5 @@ _**NOTE:** Don't forget to pass `instanced: true` to the projected material._
 
 ## TODO
 
-- handle opacity
-- multiple projections onto an object
 - different materials for the rest of the object
+- multiple projections onto an object?
