@@ -169,10 +169,24 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
   }
 }
 
+// get camera ratio from different types of camera
+function getCameraRatio(camera) {
+  switch (camera.type) {
+    case "PerspectiveCamera":
+      return camera.aspect
+    case "OrthographicCamera":
+      const width = Math.abs(camera.right - camera.left)
+      const height = Math.abs(camera.top - camera.bottom)
+      return width / height
+    default:
+      return 1.77  // 16:9
+  }
+}
+
 // scale to keep the image proportions and apply textureScale
 function computeScaledDimensions(texture, camera, textureScale, cover) {
   const ratio = texture.image.naturalWidth / texture.image.naturalHeight
-  const ratioCamera = camera.aspect
+  const ratioCamera = getCameraRatio(camera)
   const widthCamera = 1
   const heightCamera = widthCamera * (1 / ratioCamera)
   let widthScaled
