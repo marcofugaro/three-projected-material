@@ -4,29 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Basic example - three-projected-material</title>
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-      }
-
-      .source-fab {
-        display: block;
-        position: fixed;
-        bottom: 1.5rem;
-        right: 1.5rem;
-        padding: 0.75rem;
-        border-radius: 50%;
-        background-color: #f1f1f1;
-        z-index: 999;
-        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
-        cursor: pointer;
-      }
-      .source-fab img {
-        display: block;
-        width: 20px;
-      }
-    </style>
+    <link rel="stylesheet" href="css/style.css" type="text/css" />
   </head>
   <body>
     <canvas id="app"></canvas>
@@ -38,6 +16,70 @@
     >
       <img src="images/source.svg" />
     </a>
-    <script src="basic.bundle.js"></script>
+
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
+      import WebGLApp from './lib/WebGLApp.js'
+      import ProjectedMaterial, { project } from './lib/ProjectedMaterial.module.js'
+
+      // grab our canvas
+      const canvas = document.querySelector('#app')
+
+      // WebGLApp is a really basic wrapper around the three.js setup,
+      // it hides all unnecessary stuff not related to this example
+      const webgl = new WebGLApp({
+        canvas,
+        // set the scene background color
+        background: '#222',
+        // show the fps counter from stats.js
+        showFps: true,
+        // enable orbit-controls
+        orbitControls: true,
+      })
+
+      // attach it to the window to inspect in the console
+      window.webgl = webgl
+
+      // create a new camera from which to project
+      const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 3)
+      camera.position.set(-1, 1.2, 2)
+      camera.lookAt(0, 0, 0)
+
+      // add a camer frustum helper just for demostration purposes
+      const helper = new THREE.CameraHelper(camera)
+      webgl.scene.add(helper)
+
+      // load the example texture
+      const texture = new THREE.TextureLoader().load('./images/uv.jpg')
+
+      // create the mesh with the projected material
+      const geometry = new THREE.BoxGeometry(1, 1, 1)
+      const material = new ProjectedMaterial({
+        camera,
+        texture: texture,
+        color: '#37E140',
+      })
+      const box = new THREE.Mesh(geometry, material)
+      webgl.scene.add(box)
+
+      // move the mesh any way you want!
+      box.rotation.y = -Math.PI / 4
+
+      // and when you're ready project the texture!
+      project(box)
+
+      // rotate for demo purposes
+      webgl.onUpdate(() => {
+        box.rotation.y -= 0.003
+      })
+
+      // add lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+      webgl.scene.add(ambientLight)
+
+      // start animation loop
+      webgl.start()
+      webgl.draw()
+    </script>
   </body>
 </html>

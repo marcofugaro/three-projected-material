@@ -1,3 +1,6 @@
+import { BufferGeometryUtils } from 'https://unpkg.com/three@0.122.0/examples/jsm/utils/BufferGeometryUtils.js'
+import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders/GLTFLoader.js'
+
 // from https://discourse.threejs.org/t/functions-to-calculate-the-visible-width-height-at-a-given-z-depth-from-a-perspective-camera/269
 export function visibleHeightAtZDepth(depth, camera) {
   // compensate for cameras not positioned at z=0
@@ -18,4 +21,23 @@ export function visibleHeightAtZDepth(depth, camera) {
 export function visibleWidthAtZDepth(depth, camera) {
   const height = visibleHeightAtZDepth(depth, camera)
   return height * camera.aspect
+}
+
+// extract all geometry from a gltf scene
+export function extractGeometry(gltf) {
+  const geometries = []
+  gltf.traverse((child) => {
+    if (child.isMesh) {
+      geometries.push(child.geometry)
+    }
+  })
+
+  return BufferGeometryUtils.mergeBufferGeometries(geometries)
+}
+
+// promise wrapper of the GLTFLoader
+export function loadGltf(url) {
+  return new Promise((resolve, reject) => {
+    new GLTFLoader().load(url, resolve, null, reject)
+  })
 }

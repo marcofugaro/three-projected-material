@@ -4,29 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Same camera example - three-projected-material</title>
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-      }
-
-      .source-fab {
-        display: block;
-        position: fixed;
-        bottom: 1.5rem;
-        right: 1.5rem;
-        padding: 0.75rem;
-        border-radius: 50%;
-        background-color: #f1f1f1;
-        z-index: 999;
-        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
-        cursor: pointer;
-      }
-      .source-fab img {
-        display: block;
-        width: 20px;
-      }
-    </style>
+    <link rel="stylesheet" href="css/style.css" type="text/css" />
   </head>
   <body>
     <canvas id="app"></canvas>
@@ -39,6 +17,86 @@
       <img src="images/source.svg" />
     </a>
 
-    <script src="same-camera.bundle.js"></script>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
+      import WebGLApp from './lib/WebGLApp.js'
+      import ProjectedMaterial, { project } from './lib/ProjectedMaterial.module.js'
+      import { random } from './lib/math-utils.js'
+
+      // grab our canvas
+      const canvas = document.querySelector('#app')
+
+      // WebGLApp is a really basic wrapper around the three.js setup,
+      // it hides all unnecessary stuff not related to this example
+      const webgl = new WebGLApp({
+        canvas,
+        // set the scene background color
+        background: '#E6E6E6',
+        // show the fps counter from stats.js
+        showFps: true,
+        // enable orbit-controls
+        orbitControls: true,
+      })
+
+      // attach it to the window to inspect in the console
+      window.webgl = webgl
+
+      // load the example texture
+      const texture = new THREE.TextureLoader().load('./images/charles-unsplash.jpg')
+
+      // breate a bunch of meshes
+      const elements = new THREE.Group()
+      const NUM_ELEMENTS = 50
+      for (let i = 0; i < NUM_ELEMENTS; i++) {
+        const geometry = new THREE.IcosahedronGeometry(random(0.1, 0.5))
+        const material = new ProjectedMaterial({
+          // use the scene camera itself
+          camera: webgl.camera,
+          texture: texture,
+          color: '#3149D5',
+          textureScale: 0.8,
+        })
+        const element = new THREE.Mesh(geometry, material)
+
+        // move the meshes any way you want!
+        if (i < NUM_ELEMENTS * 0.3) {
+          element.position.x = random(-0.5, 0.5)
+          element.position.y = random(-1.1, 0.5)
+          element.position.z = random(-0.3, 0.3)
+          element.scale.multiplyScalar(1.4)
+        } else {
+          element.position.x = random(-1, 1)
+          element.position.y = random(-2, 2)
+          element.position.z = random(-0.5, 0.5)
+        }
+        element.rotation.x = random(0, Math.PI * 2)
+        element.rotation.y = random(0, Math.PI * 2)
+        element.rotation.z = random(0, Math.PI * 2)
+
+        // and when you're ready project the texture!
+        project(element)
+
+        elements.add(element)
+      }
+
+      webgl.scene.add(elements)
+
+      elements.rotation.y = Math.PI / 2
+      webgl.onUpdate(() => {
+        elements.rotation.y -= 0.003
+      })
+
+      // add lights
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
+      directionalLight.position.set(0, 10, 10)
+      webgl.scene.add(directionalLight)
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+      webgl.scene.add(ambientLight)
+
+      // start animation loop
+      webgl.start()
+      webgl.draw()
+    </script>
   </body>
 </html>

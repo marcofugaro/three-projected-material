@@ -1,0 +1,21 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.source-fab {
+  display: block;
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  padding: 0.75rem;
+  border-radius: 50%;
+  background-color: #f1f1f1;
+  z-index: 999;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+.source-fab img {
+  display: block;
+  width: 20px;
+}
