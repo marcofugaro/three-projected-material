@@ -23,7 +23,6 @@ export function addLoadListener(texture, callback) {
   }
 
   let interval = setInterval(() => {
-    console.log('intercalll')
     if (texture.image) {
       clearInterval(interval)
       return callback(texture)
