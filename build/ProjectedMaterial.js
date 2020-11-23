@@ -1,13 +1,13 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('three')) :
   typeof define === 'function' && define.amd ? define(['exports', 'three'], factory) :
-  (global = global || self, factory(global.projectedMaterial = {}, global.THREE));
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.projectedMaterial = {}, global.THREE));
 }(this, (function (exports, THREE) { 'use strict';
 
   function monkeyPatch(shader, { header = '', main = '', ...replaces }) {
     let patchedShader = shader;
 
-    Object.keys(replaces).forEach(key => {
+    Object.keys(replaces).forEach((key) => {
       patchedShader = patchedShader.replace(key, replaces[key]);
     });
 
@@ -19,6 +19,21 @@
       ${main}
     `
     )
+  }
+
+  // run the callback when the image will be loaded
+  function addLoadListener(texture, callback) {
+    // return if it's already loaded
+    if (texture.image) {
+      return
+    }
+
+    let interval = setInterval(() => {
+      if (texture.image) {
+        clearInterval(interval);
+        return callback(texture)
+      }
+    }, 16);
   }
 
   class ProjectedMaterial extends THREE.ShaderMaterial {
@@ -66,7 +81,8 @@
         uniforms: {
           ...THREE.ShaderLib['lambert'].uniforms,
           baseColor: { value: new THREE.Color(color) },
-          texture: { value: texture },
+          projectedTexture: { value: texture },
+          isTextureLoaded: { value: Boolean(texture.image) },
           viewMatrixCamera: { type: 'm4', value: viewMatrixCamera },
           projectionMatrixCamera: { type: 'm4', value: projectionMatrixCamera },
           modelMatrixCamera: { type: 'mat4', value: modelMatrixCamera },
@@ -82,22 +98,22 @@
           header: [
             instanced
               ? `
-            attribute vec4 savedModelMatrix0;
-            attribute vec4 savedModelMatrix1;
-            attribute vec4 savedModelMatrix2;
-            attribute vec4 savedModelMatrix3;
+            in vec4 savedModelMatrix0;
+            in vec4 savedModelMatrix1;
+            in vec4 savedModelMatrix2;
+            in vec4 savedModelMatrix3;
             `
               : `
             uniform mat4 savedModelMatrix;
           `,
-            `
+            /* glsl */ `
           uniform mat4 viewMatrixCamera;
           uniform mat4 projectionMatrixCamera;
           uniform mat4 modelMatrixCamera;
 
-          varying vec4 vWorldPosition;
-          varying vec3 vNormal;
-          varying vec4 vTexCoords;
+          out vec4 vWorldPosition;
+          out vec3 vNormal;
+          out vec4 vTexCoords;
           `,
           ].join(''),
           main: [
@@ -111,7 +127,7 @@
             );
             `
               : '',
-            `
+            /* glsl */ `
           vNormal = mat3(savedModelMatrix) * normal;
           vWorldPosition = savedModelMatrix * vec4(position, 1.0);
           vTexCoords = projectionMatrixCamera * viewMatrixCamera * vWorldPosition;
@@ -120,29 +136,36 @@
         }),
 
         fragmentShader: monkeyPatch(THREE.ShaderChunk['meshlambert_frag'], {
-          header: `
+          header: /* glsl */ `
           uniform vec3 baseColor;
-          uniform sampler2D texture;
+          uniform sampler2D projectedTexture;
+          uniform bool isTextureLoaded;
           uniform vec3 projPosition;
           uniform float widthScaled;
           uniform float heightScaled;
 
-          varying vec3 vNormal;
-          varying vec4 vWorldPosition;
-          varying vec4 vTexCoords;
+          in vec3 vNormal;
+          in vec4 vWorldPosition;
+          in vec4 vTexCoords;
 
           float map(float value, float min1, float max1, float min2, float max2) {
             return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
           }
         `,
-          'vec4 diffuseColor = vec4( diffuse, opacity );': `
+          'vec4 diffuseColor = vec4( diffuse, opacity );': /* glsl */ `
           vec2 uv = (vTexCoords.xy / vTexCoords.w) * 0.5 + 0.5;
 
           // apply the corrected width and height
           uv.x = map(uv.x, 0.0, 1.0, 0.5 - widthScaled / 2.0, 0.5 + widthScaled / 2.0);
           uv.y = map(uv.y, 0.0, 1.0, 0.5 - heightScaled / 2.0, 0.5 + heightScaled / 2.0);
 
-          vec4 color = texture2D(texture, uv);
+          vec4 color = texture(projectedTexture, uv);
+
+          // this avoids rendering black if the texture
+          // hasn't loaded yet
+          if (!isTextureLoaded) {
+            color = vec4(baseColor, 1.0);
+          }
 
           // this makes sure we don't sample out of the texture
           // TODO handle alpha
@@ -184,15 +207,49 @@
         this.uniforms.heightScaled.value = heightScaledNew;
       });
 
+      // if the image texture passed hasn't loaded yet,
+      // wait for it to load and compute the correct proportions
+      addLoadListener(texture, () => {
+        this.uniforms.isTextureLoaded.value = true;
+
+        const [widthScaledNew, heightScaledNew] = computeScaledDimensions(
+          texture,
+          camera,
+          textureScale,
+          cover
+        );
+        this.uniforms.widthScaled.value = widthScaledNew;
+        this.uniforms.heightScaled.value = heightScaledNew;
+      });
+
       this.isProjectedMaterial = true;
       this.instanced = instanced;
     }
   }
 
+  // get camera ratio from different types of cameras
+  function getCameraRatio(camera) {
+    switch (camera.type) {
+      case 'PerspectiveCamera':
+        return camera.aspect
+      case 'OrthographicCamera':
+        const width = Math.abs(camera.right - camera.left);
+        const height = Math.abs(camera.top - camera.bottom);
+        return width / height
+      default:
+        throw new Error(`${camera.type} is currently not supported in ProjectedMaterial`)
+    }
+  }
+
   // scale to keep the image proportions and apply textureScale
   function computeScaledDimensions(texture, camera, textureScale, cover) {
+    // return some default values if the image hasn't loaded yet
+    if (!texture.image) {
+      return [1, 1]
+    }
+
     const ratio = texture.image.naturalWidth / texture.image.naturalHeight;
-    const ratioCamera = camera.aspect;
+    const ratioCamera = getCameraRatio(camera);
     const widthCamera = 1;
     const heightCamera = widthCamera * (1 / ratioCamera);
     let widthScaled;
