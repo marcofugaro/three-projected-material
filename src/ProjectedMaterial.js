@@ -46,7 +46,7 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
       uniforms: {
         ...THREE.ShaderLib['lambert'].uniforms,
         baseColor: { value: new THREE.Color(color) },
-        texture: { value: texture },
+        projectedTexture: { value: texture },
         viewMatrixCamera: { type: 'm4', value: viewMatrixCamera },
         projectionMatrixCamera: { type: 'm4', value: projectionMatrixCamera },
         modelMatrixCamera: { type: 'mat4', value: modelMatrixCamera },
@@ -62,10 +62,10 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
         header: [
           instanced
             ? `
-            attribute vec4 savedModelMatrix0;
-            attribute vec4 savedModelMatrix1;
-            attribute vec4 savedModelMatrix2;
-            attribute vec4 savedModelMatrix3;
+            in vec4 savedModelMatrix0;
+            in vec4 savedModelMatrix1;
+            in vec4 savedModelMatrix2;
+            in vec4 savedModelMatrix3;
             `
             : `
             uniform mat4 savedModelMatrix;
@@ -75,9 +75,9 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
           uniform mat4 projectionMatrixCamera;
           uniform mat4 modelMatrixCamera;
 
-          varying vec4 vWorldPosition;
-          varying vec3 vNormal;
-          varying vec4 vTexCoords;
+          out vec4 vWorldPosition;
+          out vec3 vNormal;
+          out vec4 vTexCoords;
           `,
         ].join(''),
         main: [
@@ -91,7 +91,7 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
             );
             `
             : '',
-          `
+          /* glsl */ `
           vNormal = mat3(savedModelMatrix) * normal;
           vWorldPosition = savedModelMatrix * vec4(position, 1.0);
           vTexCoords = projectionMatrixCamera * viewMatrixCamera * vWorldPosition;
@@ -100,29 +100,29 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
       }),
 
       fragmentShader: monkeyPatch(THREE.ShaderChunk['meshlambert_frag'], {
-        header: `
+        header: /* glsl */ `
           uniform vec3 baseColor;
-          uniform sampler2D texture;
+          uniform sampler2D projectedTexture;
           uniform vec3 projPosition;
           uniform float widthScaled;
           uniform float heightScaled;
 
-          varying vec3 vNormal;
-          varying vec4 vWorldPosition;
-          varying vec4 vTexCoords;
+          in vec3 vNormal;
+          in vec4 vWorldPosition;
+          in vec4 vTexCoords;
 
           float map(float value, float min1, float max1, float min2, float max2) {
             return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
           }
         `,
-        'vec4 diffuseColor = vec4( diffuse, opacity );': `
+        'vec4 diffuseColor = vec4( diffuse, opacity );': /* glsl */ `
           vec2 uv = (vTexCoords.xy / vTexCoords.w) * 0.5 + 0.5;
 
           // apply the corrected width and height
           uv.x = map(uv.x, 0.0, 1.0, 0.5 - widthScaled / 2.0, 0.5 + widthScaled / 2.0);
           uv.y = map(uv.y, 0.0, 1.0, 0.5 - heightScaled / 2.0, 0.5 + heightScaled / 2.0);
 
-          vec4 color = texture2D(texture, uv);
+          vec4 color = texture(projectedTexture, uv);
 
           // this makes sure we don't sample out of the texture
           // TODO handle alpha
