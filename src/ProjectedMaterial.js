@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { monkeyPatch } from './three-utils'
+import { monkeyPatch, addLoadListener } from './three-utils'
 
 export default class ProjectedMaterial extends THREE.ShaderMaterial {
   constructor({
@@ -47,6 +47,7 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
         ...THREE.ShaderLib['lambert'].uniforms,
         baseColor: { value: new THREE.Color(color) },
         projectedTexture: { value: texture },
+        isTextureLoaded: { value: Boolean(texture.image) },
         viewMatrixCamera: { type: 'm4', value: viewMatrixCamera },
         projectionMatrixCamera: { type: 'm4', value: projectionMatrixCamera },
         modelMatrixCamera: { type: 'mat4', value: modelMatrixCamera },
@@ -70,7 +71,7 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
             : `
             uniform mat4 savedModelMatrix;
           `,
-          `
+          /* glsl */ `
           uniform mat4 viewMatrixCamera;
           uniform mat4 projectionMatrixCamera;
           uniform mat4 modelMatrixCamera;
@@ -103,6 +104,7 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
         header: /* glsl */ `
           uniform vec3 baseColor;
           uniform sampler2D projectedTexture;
+          uniform bool isTextureLoaded;
           uniform vec3 projPosition;
           uniform float widthScaled;
           uniform float heightScaled;
@@ -123,6 +125,12 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
           uv.y = map(uv.y, 0.0, 1.0, 0.5 - heightScaled / 2.0, 0.5 + heightScaled / 2.0);
 
           vec4 color = texture(projectedTexture, uv);
+
+          // this avoids rendering black if the texture
+          // hasn't loaded yet
+          if (!isTextureLoaded) {
+            color = vec4(baseColor, 1.0);
+          }
 
           // this makes sure we don't sample out of the texture
           // TODO handle alpha
@@ -164,27 +172,47 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
       this.uniforms.heightScaled.value = heightScaledNew
     })
 
+    // if the image texture passed hasn't loaded yet,
+    // wait for it to load and compute the correct proportions
+    addLoadListener(texture, () => {
+      this.uniforms.isTextureLoaded.value = true
+
+      const [widthScaledNew, heightScaledNew] = computeScaledDimensions(
+        texture,
+        camera,
+        textureScale,
+        cover
+      )
+      this.uniforms.widthScaled.value = widthScaledNew
+      this.uniforms.heightScaled.value = heightScaledNew
+    })
+
     this.isProjectedMaterial = true
     this.instanced = instanced
   }
 }
 
-// get camera ratio from different types of camera
+// get camera ratio from different types of cameras
 function getCameraRatio(camera) {
   switch (camera.type) {
-    case "PerspectiveCamera":
+    case 'PerspectiveCamera':
       return camera.aspect
-    case "OrthographicCamera":
+    case 'OrthographicCamera':
       const width = Math.abs(camera.right - camera.left)
       const height = Math.abs(camera.top - camera.bottom)
       return width / height
     default:
-      return 1.77  // 16:9
+      throw new Error(`${camera.type} is currently not supported in ProjectedMaterial`)
   }
 }
 
 // scale to keep the image proportions and apply textureScale
 function computeScaledDimensions(texture, camera, textureScale, cover) {
+  // return some default values if the image hasn't loaded yet
+  if (!texture.image) {
+    return [1, 1]
+  }
+
   const ratio = texture.image.naturalWidth / texture.image.naturalHeight
   const ratioCamera = getCameraRatio(camera)
   const widthCamera = 1
