@@ -14,6 +14,7 @@ export default class WebGLApp {
     background = '#000',
     backgroundAlpha = 1,
     fov = 45,
+    frustumSize = 3,
     near = 0.01,
     far = 100,
     ...options
@@ -36,9 +37,21 @@ export default class WebGLApp {
     this.maxDeltaTime = options.maxDeltaTime || 1 / 30
 
     // setup a basic camera
-    this.camera = options.camera || new THREE.PerspectiveCamera(fov, 1, near, far)
+    if (!options.orthographic) {
+      this.camera = new THREE.PerspectiveCamera(fov, 1, near, far)
+    } else {
+      const aspect = window.innerWidth / window.innerHeight
+      this.camera = new THREE.OrthographicCamera(
+        -(frustumSize * aspect) / 2,
+        (frustumSize * aspect) / 2,
+        frustumSize / 2,
+        -frustumSize / 2,
+        0.01,
+        100
+      )
+      this.camera.frustumSize = frustumSize
+    }
     this.camera.position.copy(options.cameraPosition || new THREE.Vector3(0, 0, 4))
-    // this.camera = new THREE.OrthographicCamera(-2, 2, 2, -2, near, far)
     this.scene = new THREE.Scene()
 
     this.gl = this.renderer.getContext()
@@ -60,9 +73,10 @@ export default class WebGLApp {
     // set up a simple orbit controller
     if (options.orbitControls) {
       this.orbitControls = new OrbitControls(this.camera, this.canvas)
+
       this.orbitControls.enableDamping = true
-      this.orbitControls.dampingFactor = 0.05
-      this.orbitControls.screenSpacePanning = false
+      this.orbitControls.dampingFactor = 0.15
+      this.orbitControls.enablePan = false
 
       if (options.orbitControls instanceof Object) {
         Object.keys(options.orbitControls).forEach((key) => {
@@ -124,6 +138,12 @@ export default class WebGLApp {
     this.renderer.setSize(width, height)
     if (this.camera.isPerspectiveCamera) {
       this.camera.aspect = width / height
+    } else {
+      const aspect = width / height
+      this.camera.left = -(this.camera.frustumSize * aspect) / 2
+      this.camera.right = (this.camera.frustumSize * aspect) / 2
+      this.camera.top = this.camera.frustumSize / 2
+      this.camera.bottom = -this.camera.frustumSize / 2
     }
     this.camera.updateProjectionMatrix()
 

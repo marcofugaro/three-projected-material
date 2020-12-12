@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Orthographic camera example - three-projected-material</title>
+    <link rel="stylesheet" href="css/style.css" type="text/css" />
+  </head>
+  <body>
+    <canvas id="app"></canvas>
+    <a
+      class="source-fab"
+      target="_blank"
+      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/orthographic-camera.js"
+      title="View source code on GitHub"
+    >
+      <img src="images/source.svg" />
+    </a>
+
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
+      import WebGLApp from './lib/WebGLApp.js'
+      import ProjectedMaterial, { project } from './lib/ProjectedMaterial.module.js'
+      import { random } from './lib/math-utils.js'
+
+      // grab our canvas
+      const canvas = document.querySelector('#app')
+
+      // WebGLApp is a really basic wrapper around the three.js setup,
+      // it hides all unnecessary stuff not related to this example
+      const webgl = new WebGLApp({
+        canvas,
+        // set the scene background color
+        background: '#111',
+        // show the fps counter from stats.js
+        showFps: true,
+        // enable orbit-controls
+        orbitControls: true,
+        // create an ortographic camera,
+        // it will be exposed as webgl.camera
+        orthographic: true,
+      })
+
+      // attach it to the window to inspect in the console
+      window.webgl = webgl
+
+      // load the example texture
+      const texture = new THREE.TextureLoader().load('./images/charles-unsplash.jpg')
+
+      // breate a bunch of meshes
+      const elements = new THREE.Group()
+      const NUM_ELEMENTS = 130
+      for (let i = 0; i < NUM_ELEMENTS; i++) {
+        const geometry = new THREE.BoxGeometry(random(0.1, 0.5), random(0.1, 0.5), random(0.1, 0.5))
+
+        const material = new ProjectedMaterial({
+          // use the scene camera itself
+          camera: webgl.camera,
+          texture: texture,
+          color: '#1c1c1c',
+          textureScale: 0.8,
+        })
+        const element = new THREE.Mesh(geometry, material)
+
+        // move the meshes any way you want!
+        element.position.x = random(-1, 1)
+        element.position.y = random(-1, 1)
+        element.position.z = random(-1, 1)
+
+        // and when you're ready project the texture!
+        project(element)
+
+        elements.add(element)
+      }
+
+      webgl.scene.add(elements)
+
+      // move the camera so it's not facing the
+      // texture straight on at the start
+      webgl.camera.position.set(-10, 5, 10)
+
+      // add lights
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
+      directionalLight.position.set(0, 10, 10)
+      webgl.scene.add(directionalLight)
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+      webgl.scene.add(ambientLight)
+
+      // start animation loop
+      webgl.start()
+      webgl.draw()
+    </script>
+  </body>
+</html>

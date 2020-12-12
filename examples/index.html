@@ -124,6 +124,44 @@
         height: auto;
       }
     </style>
+    <script type="module">
+      const examples = ['basic', 'same-camera', '3d-model', 'orthographic-camera', 'instancing']
+
+      function exampleTemplate(name) {
+        const readableName = capitalize(name.replace(/-/g, ' '))
+
+        return `
+          <div>
+            <a href="${name}"><img src="images/example-${name}.png" /></a>
+            <div class="didascalia">
+              <a href="${name}" class="title-link">${readableName}</a>
+              <a
+                href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/${name}.html"
+                target="_blank"
+                >(source)</a
+              >
+            </div>
+          </div>
+        `
+      }
+
+      // generate and add the examples to the DOM
+      const examplesContainer = document.querySelector('.examples')
+      examples.forEach((example) => {
+        const exampleNode = createElementFromHTML(exampleTemplate(example))
+        examplesContainer.appendChild(exampleNode)
+      })
+
+      function createElementFromHTML(htmlString) {
+        const div = document.createElement('div')
+        div.innerHTML = htmlString.trim()
+        return div.firstChild
+      }
+
+      function capitalize(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1)
+      }
+    </script>
   </head>
   <body>
     <div class="cover">
@@ -141,52 +179,8 @@
       <a href="https://github.com/marcofugaro/three-projected-material">Documentation on GitHub</a>
       <h2>Examples</h2>
 
-      <div class="grid">
-        <div>
-          <a href="basic"><img src="images/example-basic.png"/></a>
-          <div class="didascalia">
-            <a href="basic" class="title-link">Basic</a>
-            <a
-              href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/basic.js"
-              target="_blank"
-              >(source)</a
-            >
-          </div>
-        </div>
-
-        <div>
-          <a href="same-camera"><img src="images/example-same-camera.png"/></a>
-          <div class="didascalia">
-            <a href="same-camera" class="title-link">Same camera</a>
-            <a
-              href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/same-camera.js"
-              target="_blank"
-              >(source)</a
-            >
-          </div>
-        </div>
-        <div>
-          <a href="instancing"><img src="images/example-instancing.png"/></a>
-          <div class="didascalia">
-            <a href="instancing" class="title-link">Instancing</a>
-            <a
-              href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/instancing.js"
-              target="_blank"
-              >(source)</a
-            >
-          </div>
-        </div>
-        <div>
-          <a href="3d-model"><img src="images/example-3d-model.png"/></a>
-          <div class="didascalia">
-            <a href="3d-model" class="title-link">3D Model</a>
-            <a
-              href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/3d-model.js"
-              target="_blank"
-              >(source)</a
-            >
-          </div>
-        </div>
+      <div class="examples grid">
+        <!-- THIS WILL BE POPULATED BY JS -->
       </div>
     </div>
   </body>

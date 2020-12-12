@@ -19,3 +19,7 @@ body {
   display: block;
   width: 20px;
 }
+
+canvas {
+  outline: none;
+}

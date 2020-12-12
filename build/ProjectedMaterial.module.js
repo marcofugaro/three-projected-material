@@ -1,4 +1,4 @@
-import { ShaderMaterial, ShaderLib, Color, Matrix4, ShaderChunk, InstancedBufferAttribute } from 'three';
+import { ShaderMaterial, Vector3, ShaderLib, Color, Matrix4, ShaderChunk, InstancedBufferAttribute } from 'three';
 
 function monkeyPatch(shader, { header = '', main = '', ...replaces }) {
   let patchedShader = shader;
@@ -62,6 +62,7 @@ class ProjectedMaterial extends ShaderMaterial {
     const modelMatrixCamera = camera.matrixWorld.clone();
 
     const projPosition = camera.position.clone();
+    const projDirection = new Vector3(0, 0, -1).applyMatrix4(modelMatrixCamera); // camera.position.clone()
 
     // scale to keep the image proportions and apply textureScale
     const [widthScaled, heightScaled] = computeScaledDimensions(
@@ -74,8 +75,12 @@ class ProjectedMaterial extends ShaderMaterial {
     super({
       ...options,
       lights: true,
+      defines: {
+        ...(instanced && { USE_INSTANCING: '' }),
+        ...(camera.isOrthographicCamera && { ORTHOGRAPHIC: '' }),
+      },
       uniforms: {
-        ...ShaderLib['lambert'].uniforms,
+        ...ShaderLib.lambert.uniforms,
         baseColor: { value: new Color(color) },
         projectedTexture: { value: texture },
         isTextureLoaded: { value: Boolean(texture.image) },
@@ -85,58 +90,54 @@ class ProjectedMaterial extends ShaderMaterial {
         // we will set this later when we will have positioned the object
         savedModelMatrix: { type: 'mat4', value: new Matrix4() },
         projPosition: { type: 'v3', value: projPosition },
+        projDirection: { type: 'v3', value: projDirection },
         widthScaled: { value: widthScaled },
         heightScaled: { value: heightScaled },
         opacity: { value: opacity },
       },
 
-      vertexShader: monkeyPatch(ShaderChunk['meshlambert_vert'], {
-        header: [
-          instanced
-            ? `
-            in vec4 savedModelMatrix0;
-            in vec4 savedModelMatrix1;
-            in vec4 savedModelMatrix2;
-            in vec4 savedModelMatrix3;
-            `
-            : `
-            uniform mat4 savedModelMatrix;
-          `,
-          /* glsl */ `
+      vertexShader: monkeyPatch(ShaderChunk.meshlambert_vert, {
+        header: /* glsl */ `
           uniform mat4 viewMatrixCamera;
           uniform mat4 projectionMatrixCamera;
           uniform mat4 modelMatrixCamera;
+
+          #ifdef USE_INSTANCING
+          in vec4 savedModelMatrix0;
+          in vec4 savedModelMatrix1;
+          in vec4 savedModelMatrix2;
+          in vec4 savedModelMatrix3;
+          #else
+          uniform mat4 savedModelMatrix;
+          #endif
 
           out vec4 vWorldPosition;
           out vec3 vNormal;
           out vec4 vTexCoords;
           `,
-        ].join(''),
-        main: [
-          instanced
-            ? `
-            mat4 savedModelMatrix = mat4(
-              savedModelMatrix0,
-              savedModelMatrix1,
-              savedModelMatrix2,
-              savedModelMatrix3
-            );
-            `
-            : '',
-          /* glsl */ `
+        main: /* glsl */ `
+          #ifdef USE_INSTANCING
+          mat4 savedModelMatrix = mat4(
+            savedModelMatrix0,
+            savedModelMatrix1,
+            savedModelMatrix2,
+            savedModelMatrix3
+          );
+          #endif
+
           vNormal = mat3(savedModelMatrix) * normal;
           vWorldPosition = savedModelMatrix * vec4(position, 1.0);
           vTexCoords = projectionMatrixCamera * viewMatrixCamera * vWorldPosition;
           `,
-        ].join(''),
       }),
 
-      fragmentShader: monkeyPatch(ShaderChunk['meshlambert_frag'], {
+      fragmentShader: monkeyPatch(ShaderChunk.meshlambert_frag, {
         header: /* glsl */ `
           uniform vec3 baseColor;
           uniform sampler2D projectedTexture;
           uniform bool isTextureLoaded;
           uniform vec3 projPosition;
+          uniform vec3 projDirection;
           uniform float widthScaled;
           uniform float heightScaled;
 
@@ -171,9 +172,13 @@ class ProjectedMaterial extends ShaderMaterial {
           }
 
           // this makes sure we don't render also the back of the object
+          #ifdef ORTHOGRAPHIC
+          vec3 projectorDirection = projDirection;
+          #else
           vec3 projectorDirection = normalize(projPosition - vWorldPosition.xyz);
+          #endif
           float dotProduct = dot(vNormal, projectorDirection);
-          if (dotProduct < 0.0) {
+          if (dotProduct < 0.00001) {
             color = vec4(baseColor, 1.0);
           }
 
@@ -226,14 +231,17 @@ class ProjectedMaterial extends ShaderMaterial {
 // get camera ratio from different types of cameras
 function getCameraRatio(camera) {
   switch (camera.type) {
-    case 'PerspectiveCamera':
+    case 'PerspectiveCamera': {
       return camera.aspect
-    case 'OrthographicCamera':
+    }
+    case 'OrthographicCamera': {
       const width = Math.abs(camera.right - camera.left);
       const height = Math.abs(camera.top - camera.bottom);
       return width / height
-    default:
+    }
+    default: {
       throw new Error(`${camera.type} is currently not supported in ProjectedMaterial`)
+    }
   }
 }
 
