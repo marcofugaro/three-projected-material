@@ -62,7 +62,7 @@ class ProjectedMaterial extends ShaderMaterial {
     const modelMatrixCamera = camera.matrixWorld.clone();
 
     const projPosition = camera.position.clone();
-    const projDirection = new Vector3(0, 0, -1).applyMatrix4(modelMatrixCamera); // camera.position.clone()
+    const projDirection = new Vector3(0, 0, -1).applyMatrix4(modelMatrixCamera);
 
     // scale to keep the image proportions and apply textureScale
     const [widthScaled, heightScaled] = computeScaledDimensions(
@@ -83,6 +83,8 @@ class ProjectedMaterial extends ShaderMaterial {
         ...ShaderLib.lambert.uniforms,
         baseColor: { value: new Color(color) },
         projectedTexture: { value: texture },
+        // this avoids rendering black if the texture
+        // hasn't loaded yet
         isTextureLoaded: { value: Boolean(texture.image) },
         viewMatrixCamera: { type: 'm4', value: viewMatrixCamera },
         projectionMatrixCamera: { type: 'm4', value: projectionMatrixCamera },
@@ -111,9 +113,11 @@ class ProjectedMaterial extends ShaderMaterial {
           uniform mat4 savedModelMatrix;
           #endif
 
-          out vec4 vWorldPosition;
           out vec3 vNormal;
           out vec4 vTexCoords;
+          #ifndef ORTHOGRAPHIC
+          out vec4 vWorldPosition;
+          #endif
           `,
         main: /* glsl */ `
           #ifdef USE_INSTANCING
@@ -126,8 +130,10 @@ class ProjectedMaterial extends ShaderMaterial {
           #endif
 
           vNormal = mat3(savedModelMatrix) * normal;
+          vTexCoords = projectionMatrixCamera * viewMatrixCamera * savedModelMatrix * vec4(position, 1.0);;
+          #ifndef ORTHOGRAPHIC
           vWorldPosition = savedModelMatrix * vec4(position, 1.0);
-          vTexCoords = projectionMatrixCamera * viewMatrixCamera * vWorldPosition;
+          #endif
           `,
       }),
 
@@ -142,8 +148,10 @@ class ProjectedMaterial extends ShaderMaterial {
           uniform float heightScaled;
 
           in vec3 vNormal;
-          in vec4 vWorldPosition;
           in vec4 vTexCoords;
+          #ifndef ORTHOGRAPHIC
+          in vec4 vWorldPosition;
+          #endif
 
           float map(float value, float min1, float max1, float min2, float max2) {
             return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
@@ -156,20 +164,10 @@ class ProjectedMaterial extends ShaderMaterial {
           uv.x = map(uv.x, 0.0, 1.0, 0.5 - widthScaled / 2.0, 0.5 + widthScaled / 2.0);
           uv.y = map(uv.y, 0.0, 1.0, 0.5 - heightScaled / 2.0, 0.5 + heightScaled / 2.0);
 
-          vec4 color = texture(projectedTexture, uv);
-
-          // this avoids rendering black if the texture
-          // hasn't loaded yet
-          if (!isTextureLoaded) {
-            color = vec4(baseColor, 1.0);
-          }
 
           // this makes sure we don't sample out of the texture
-          // TODO handle alpha
-          bool inTexture = (max(uv.x, uv.y) <= 1.0 && min(uv.x, uv.y) >= 0.0);
-          if (!inTexture) {
-            color = vec4(baseColor, 1.0);
-          }
+          bool isInTexture = (max(uv.x, uv.y) <= 1.0 && min(uv.x, uv.y) >= 0.0);
+
 
           // this makes sure we don't render also the back of the object
           #ifdef ORTHOGRAPHIC
@@ -178,14 +176,20 @@ class ProjectedMaterial extends ShaderMaterial {
           vec3 projectorDirection = normalize(projPosition - vWorldPosition.xyz);
           #endif
           float dotProduct = dot(vNormal, projectorDirection);
-          if (dotProduct < 0.00001) {
-            color = vec4(baseColor, 1.0);
+          bool isFacingProjector = dotProduct > 0.000001;
+
+
+          vec4 diffuseColor = vec4(baseColor, opacity);
+
+          if (isFacingProjector && isInTexture && isTextureLoaded) {
+            vec4 textureColor = texture(projectedTexture, uv);
+
+            // apply the material opacity
+            textureColor.a *= opacity;
+
+            // https://learnopengl.com/Advanced-OpenGL/Blending
+            diffuseColor = textureColor * textureColor.a + diffuseColor * (1.0 - textureColor.a);
           }
-
-          // opacity from https://unpkg.com/three@0.122.0/build/three.module.js.js
-          color.a *= opacity;
-
-          vec4 diffuseColor = color;
         `,
       }),
     });
@@ -209,7 +213,8 @@ class ProjectedMaterial extends ShaderMaterial {
     });
 
     // if the image texture passed hasn't loaded yet,
-    // wait for it to load and compute the correct proportions
+    // wait for it to load and compute the correct proportions.
+    // this avoids rendering black while the texture is loading
     addLoadListener(texture, () => {
       this.uniforms.isTextureLoaded.value = true;
 
