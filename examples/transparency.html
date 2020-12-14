@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Basic example - three-projected-material</title>
+    <title>Transparency example - three-projected-material</title>
     <link rel="stylesheet" href="css/style.css" type="text/css" />
   </head>
   <body>
@@ -11,7 +11,7 @@
     <a
       class="source-fab"
       target="_blank"
-      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/basic.html"
+      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/transparency.html"
       title="View source code on GitHub"
     >
       <img src="images/source.svg" />
@@ -21,6 +21,7 @@
       import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
       import ProjectedMaterial, { project } from './lib/ProjectedMaterial.module.js'
+      import { random } from './lib/math-utils.js'
 
       // grab our canvas
       const canvas = document.querySelector('#app')
@@ -30,53 +31,58 @@
       const webgl = new WebGLApp({
         canvas,
         // set the scene background color
-        background: '#222',
+        background: '#fafafa',
         // show the fps counter from stats.js
         showFps: true,
         // enable orbit-controls
         orbitControls: true,
-        // set the initial camera position
-        cameraPosition: new THREE.Vector3(0, 1.2, 4),
       })
 
       // attach it to the window to inspect in the console
       window.webgl = webgl
 
-      // create a new camera from which to project
-      const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 3)
-      camera.position.set(-1, 1.2, 2)
-      camera.lookAt(0, 0, 0)
+      // load the texture with transparency
+      const texture = new THREE.TextureLoader().load('./images/three-projected-material.png')
 
-      // add a camer frustum helper just for demostration purposes
-      const helper = new THREE.CameraHelper(camera)
-      webgl.scene.add(helper)
+      const geometry = new THREE.IcosahedronGeometry(1.3, 5)
+      // TODO fix
+      // for MeshLambertMaterial you also have to compute flat normals
+      geometry.computeFlatVertexNormals()
 
-      // load the example texture
-      const texture = new THREE.TextureLoader().load('./images/uv.jpg')
-
-      // create the mesh with the projected material
-      const geometry = new THREE.BoxGeometry(1, 1, 1)
       const material = new ProjectedMaterial({
-        camera,
+        // use the scene camera itself
+        camera: webgl.camera,
         texture: texture,
-        color: '#37E140',
+        color: '#59d8e8',
+        textureScale: 0.7,
+        flatShading: true,
+        // transparent: true,
+        // opacity: 0.5,
       })
-      const box = new THREE.Mesh(geometry, material)
-      webgl.scene.add(box)
+      const mesh = new THREE.Mesh(geometry, material)
 
-      // move the mesh any way you want!
-      box.rotation.y = -Math.PI / 4
+      // move the meshes any way you want!
 
       // and when you're ready project the texture!
-      project(box)
+      project(mesh)
 
-      // rotate for demo purposes
+      webgl.scene.add(mesh)
+
+      mesh.rotation.y = Math.PI / 2
       webgl.onUpdate(() => {
-        box.rotation.y -= 0.003
+        mesh.rotation.y -= 0.003
       })
 
       // add lights
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
+      directionalLight.position.set(0, 10, 10)
+      webgl.scene.add(directionalLight)
+
+      const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.2)
+      directionalLight2.position.set(10, 0, -5)
+      webgl.scene.add(directionalLight2)
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
       webgl.scene.add(ambientLight)
 
       // start animation loop
