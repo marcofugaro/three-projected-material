@@ -26,6 +26,10 @@ export default class WebGLApp {
       ...options,
     })
 
+    if (options.outputEncoding) {
+      this.renderer.outputEncoding = options.outputEncoding
+    }
+
     this.renderer.sortObjects = false
     this.canvas = this.renderer.domElement
 
