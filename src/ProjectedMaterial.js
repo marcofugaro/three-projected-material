@@ -2,8 +2,6 @@ import * as THREE from 'three'
 import { monkeyPatch, addLoadListener, getTexelDecodingFunction } from './three-utils'
 
 export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
-  isProjectedMaterial = true
-
   constructor({ camera, texture, textureScale = 1, cover = false, ...options } = {}) {
     if (!texture || !texture.isTexture) {
       throw new Error('Invalid texture passed to the ProjectedMaterial')
@@ -14,6 +12,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     }
 
     super(options)
+    this.isProjectedMaterial = true
 
     // make sure the camera matrices are updated
     camera.updateProjectionMatrix()

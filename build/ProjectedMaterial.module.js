@@ -78,8 +78,6 @@ function getTexelDecodingFunction(functionName, encoding) {
 }
 
 class ProjectedMaterial extends MeshPhysicalMaterial {
-  isProjectedMaterial = true
-
   constructor({ camera, texture, textureScale = 1, cover = false, ...options } = {}) {
     if (!texture || !texture.isTexture) {
       throw new Error('Invalid texture passed to the ProjectedMaterial')
@@ -90,6 +88,7 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
     }
 
     super(options);
+    this.isProjectedMaterial = true;
 
     // make sure the camera matrices are updated
     camera.updateProjectionMatrix();
