@@ -36,14 +36,14 @@
       const webgl = new WebGLApp({
         canvas,
         // set the scene background color
-        background: '#E6E6E6',
+        background: '#111',
         // show the fps counter from stats.js
         showFps: true,
         // enable orbit-controls
         orbitControls: true,
         // add the controls-state pane
         controls: {
-          speed: State.Slider(0.3, { min: 0, max: 3, step: 0.01 }),
+          speed: State.Slider(0.3, { min: -1, max: 1, step: 0.01 }),
         },
       })
 
@@ -54,22 +54,21 @@
       const height = visibleHeightAtZDepth(0, webgl.camera)
 
       // create a bunch of instanced elements
-      const NUM_ELEMENTS = 1000
+      const NUM_ELEMENTS = 100
       const dummy = new THREE.Object3D()
 
       // load the example texture
       const texture = new THREE.TextureLoader().load('./images/charles-unsplash.jpg')
 
-      const geometry = new THREE.TetrahedronBufferGeometry(0.4)
+      const geometry = new THREE.TetrahedronBufferGeometry()
       const material = new ProjectedMaterial({
         camera: webgl.camera,
         texture: texture,
         color: '#cccccc',
         cover: true,
-        instanced: true,
       })
 
-      // allocate the projection data
+      // allocate the projection data as attributes on the geometry
       allocateProjectionData(geometry, NUM_ELEMENTS)
 
       // create the instanced mesh
@@ -104,13 +103,17 @@
 
       webgl.scene.add(instancedMesh)
 
-      // rotate the elements
-      webgl.onUpdate((dt, time) => {
+      let t = 0
+      webgl.onUpdate((dt) => {
+        t += dt * webgl.controls.speed
+
+        // rotate the elements each frame,
+        // this is a bit expensive, even without projection
         for (let i = 0; i < NUM_ELEMENTS; i++) {
           dummy.position.copy(initialPositions[i])
           dummy.rotation.copy(initialRotations[i])
 
-          dummy.rotateX(time * webgl.controls.speed)
+          dummy.rotateX(t)
           dummy.updateMatrix()
           instancedMesh.setMatrixAt(i, dummy.matrix)
         }

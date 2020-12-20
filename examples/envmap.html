@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Basic example - three-projected-material</title>
+    <title>Envmap example - three-projected-material</title>
     <link rel="stylesheet" href="css/style.css" type="text/css" />
   </head>
   <body>
@@ -11,7 +11,7 @@
     <a
       class="source-fab"
       target="_blank"
-      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/basic.html"
+      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/envmap.html"
       title="View source code on GitHub"
     >
       <img src="images/source.svg" />
@@ -29,49 +29,52 @@
       // it hides all unnecessary stuff not related to this example
       const webgl = new WebGLApp({
         canvas,
-        // set the scene background color
-        background: '#222',
         // show the fps counter from stats.js
         showFps: true,
         // enable orbit-controls
         orbitControls: true,
-        // set the initial camera position
-        cameraPosition: new THREE.Vector3(0, 1.2, 4),
+        // enable gamma
+        outputEncoding: THREE.sRGBEncoding,
       })
 
       // attach it to the window to inspect in the console
       window.webgl = webgl
 
-      // create a new camera from which to project
-      const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 3)
-      camera.position.set(-1, 1.2, 2)
-      camera.lookAt(0, 0, 0)
-
-      // add a camer frustum helper just for demostration purposes
-      const helper = new THREE.CameraHelper(camera)
-      webgl.scene.add(helper)
-
       // load the example texture
-      const texture = new THREE.TextureLoader().load('./images/uv.jpg')
+      const texture = new THREE.TextureLoader().load('./images/charles-unsplash.jpg')
+      texture.encoding = THREE.sRGBEncoding
 
-      // create the mesh with the projected material
-      const geometry = new THREE.BoxGeometry(1, 1, 1)
+      // load the envMap
+      const envMap = new THREE.TextureLoader().load('./images/kandao3_blurred.jpg')
+      envMap.mapping = THREE.EquirectangularReflectionMapping
+      envMap.encoding = THREE.sRGBEncoding
+
+      const geometry = new THREE.IcosahedronGeometry(1, 6)
       const material = new ProjectedMaterial({
-        camera,
+        camera: webgl.camera,
         texture: texture,
-        color: '#37E140',
+        envMap: envMap,
+        textureScale: 2,
+        // convert the color since gamma is enabled
+        color: new THREE.Color('#cccccc').convertSRGBToLinear(),
+        // make it reflective
+        roughness: 0,
       })
-      const box = new THREE.Mesh(geometry, material)
-      webgl.scene.add(box)
 
-      // move the mesh any way you want!
-      box.rotation.y = -Math.PI / 4
+      const mesh = new THREE.Mesh(geometry, material)
 
-      // and when you're ready project the texture!
-      project(box)
+      project(mesh)
+
+      webgl.scene.add(mesh)
+
+      // set the scene background
+      webgl.scene.background = envMap
+
+      // the envMap could also be set like this
+      // webgl.scene.environment = envMap
 
       // add lights
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
       webgl.scene.add(ambientLight)
 
       // start animation loop

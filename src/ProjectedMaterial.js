@@ -1,17 +1,10 @@
 import * as THREE from 'three'
-import { monkeyPatch, addLoadListener } from './three-utils'
+import { monkeyPatch, addLoadListener, getTexelDecodingFunction } from './three-utils'
 
-export default class ProjectedMaterial extends THREE.ShaderMaterial {
-  constructor({
-    camera,
-    texture,
-    color = 0xffffff,
-    textureScale = 1,
-    instanced = false,
-    cover = false,
-    opacity = 1,
-    ...options
-  } = {}) {
+export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
+  isProjectedMaterial = true
+
+  constructor({ camera, texture, textureScale = 1, cover = false, ...options } = {}) {
     if (!texture || !texture.isTexture) {
       throw new Error('Invalid texture passed to the ProjectedMaterial')
     }
@@ -19,6 +12,8 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
     if (!camera || !camera.isCamera) {
       throw new Error('Invalid camera passed to the ProjectedMaterial')
     }
+
+    super(options)
 
     // make sure the camera matrices are updated
     camera.updateProjectionMatrix()
@@ -41,33 +36,37 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
       cover
     )
 
-    super({
-      ...options,
-      lights: true,
-      defines: {
-        ...(instanced && { USE_INSTANCING: '' }),
-        ...(camera.isOrthographicCamera && { ORTHOGRAPHIC: '' }),
-      },
-      uniforms: {
-        ...THREE.ShaderLib.lambert.uniforms,
-        baseColor: { value: new THREE.Color(color) },
-        projectedTexture: { value: texture },
-        // this avoids rendering black if the texture
-        // hasn't loaded yet
-        isTextureLoaded: { value: Boolean(texture.image) },
-        viewMatrixCamera: { type: 'm4', value: viewMatrixCamera },
-        projectionMatrixCamera: { type: 'm4', value: projectionMatrixCamera },
-        modelMatrixCamera: { type: 'mat4', value: modelMatrixCamera },
-        // we will set this later when we will have positioned the object
-        savedModelMatrix: { type: 'mat4', value: new THREE.Matrix4() },
-        projPosition: { type: 'v3', value: projPosition },
-        projDirection: { type: 'v3', value: projDirection },
-        widthScaled: { value: widthScaled },
-        heightScaled: { value: heightScaled },
-        opacity: { value: opacity },
-      },
+    // apply encoding based on provided texture
+    const projectedTexelToLinear = getTexelDecodingFunction(
+      'projectedTexelToLinear',
+      texture.encoding
+    )
 
-      vertexShader: monkeyPatch(THREE.ShaderChunk.meshlambert_vert, {
+    this.uniforms = {
+      projectedTexture: { value: texture },
+      // this avoids rendering black if the texture
+      // hasn't loaded yet
+      isTextureLoaded: { value: Boolean(texture.image) },
+      viewMatrixCamera: { type: 'm4', value: viewMatrixCamera },
+      projectionMatrixCamera: { type: 'm4', value: projectionMatrixCamera },
+      modelMatrixCamera: { type: 'mat4', value: modelMatrixCamera },
+      // we will set this later when we will have positioned the object
+      savedModelMatrix: { type: 'mat4', value: new THREE.Matrix4() },
+      projPosition: { type: 'v3', value: projPosition },
+      projDirection: { type: 'v3', value: projDirection },
+      widthScaled: { value: widthScaled },
+      heightScaled: { value: heightScaled },
+    }
+
+    this.onBeforeCompile = (shader) => {
+      // expose also the material's uniforms
+      Object.assign(this.uniforms, shader.uniforms)
+      shader.uniforms = this.uniforms
+
+      shader.vertexShader = monkeyPatch(shader.vertexShader, {
+        defines: {
+          ...(camera.isOrthographicCamera && { ORTHOGRAPHIC: '' }),
+        },
         header: /* glsl */ `
           uniform mat4 viewMatrixCamera;
           uniform mat4 projectionMatrixCamera;
@@ -82,12 +81,12 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
           uniform mat4 savedModelMatrix;
           #endif
 
-          out vec3 vNormal;
+          out vec3 vSavedNormal;
           out vec4 vTexCoords;
           #ifndef ORTHOGRAPHIC
           out vec4 vWorldPosition;
           #endif
-          `,
+        `,
         main: /* glsl */ `
           #ifdef USE_INSTANCING
           mat4 savedModelMatrix = mat4(
@@ -98,17 +97,19 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
           );
           #endif
 
-          vNormal = mat3(savedModelMatrix) * normal;
+          vSavedNormal = mat3(savedModelMatrix) * normal;
           vTexCoords = projectionMatrixCamera * viewMatrixCamera * savedModelMatrix * vec4(position, 1.0);;
           #ifndef ORTHOGRAPHIC
           vWorldPosition = savedModelMatrix * vec4(position, 1.0);
           #endif
-          `,
-      }),
+        `,
+      })
 
-      fragmentShader: monkeyPatch(THREE.ShaderChunk.meshlambert_frag, {
+      shader.fragmentShader = monkeyPatch(shader.fragmentShader, {
+        defines: {
+          ...(camera.isOrthographicCamera && { ORTHOGRAPHIC: '' }),
+        },
         header: /* glsl */ `
-          uniform vec3 baseColor;
           uniform sampler2D projectedTexture;
           uniform bool isTextureLoaded;
           uniform vec3 projPosition;
@@ -116,11 +117,13 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
           uniform float widthScaled;
           uniform float heightScaled;
 
-          in vec3 vNormal;
+          in vec3 vSavedNormal;
           in vec4 vTexCoords;
           #ifndef ORTHOGRAPHIC
           in vec4 vWorldPosition;
           #endif
+
+          ${projectedTexelToLinear}
 
           float map(float value, float min1, float max1, float min2, float max2) {
             return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
@@ -144,14 +147,17 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
           #else
           vec3 projectorDirection = normalize(projPosition - vWorldPosition.xyz);
           #endif
-          float dotProduct = dot(vNormal, projectorDirection);
+          float dotProduct = dot(vSavedNormal, projectorDirection);
           bool isFacingProjector = dotProduct > 0.000001;
 
 
-          vec4 diffuseColor = vec4(baseColor, opacity);
+          vec4 diffuseColor = vec4(diffuse, opacity);
 
           if (isFacingProjector && isInTexture && isTextureLoaded) {
             vec4 textureColor = texture(projectedTexture, uv);
+
+            // apply the enccoding from the texture
+            textureColor = projectedTexelToLinear(textureColor);
 
             // apply the material opacity
             textureColor.a *= opacity;
@@ -160,8 +166,8 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
             diffuseColor = textureColor * textureColor.a + diffuseColor * (1.0 - textureColor.a);
           }
         `,
-      }),
-    })
+      })
+    }
 
     // listen on resize if the camera used for the projection
     // is the same used to render.
@@ -196,9 +202,6 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
       this.uniforms.widthScaled.value = widthScaledNew
       this.uniforms.heightScaled.value = heightScaledNew
     })
-
-    this.isProjectedMaterial = true
-    this.instanced = instanced
   }
 }
 
@@ -276,10 +279,6 @@ export function projectInstanceAt(index, instancedMesh, matrixWorld) {
     throw new Error(
       `No allocated data found on the geometry, please call 'allocateProjectionData(geometry)'`
     )
-  }
-
-  if (!instancedMesh.material.instanced) {
-    throw new Error(`Please pass 'instanced: true' to the ProjectedMaterial`)
   }
 
   instancedMesh.geometry.attributes.savedModelMatrix0.setXYZW(

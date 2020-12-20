@@ -45,25 +45,19 @@
       const texture = new THREE.TextureLoader().load('./images/three-projected-material.png')
 
       const geometry = new THREE.IcosahedronGeometry(1.3, 5)
-      // TODO fix
-      // for MeshLambertMaterial you also have to compute flat normals
-      geometry.computeFlatVertexNormals()
-
       const material = new ProjectedMaterial({
-        // use the scene camera itself
         camera: webgl.camera,
         texture: texture,
         color: '#59d8e8',
         textureScale: 0.7,
         flatShading: true,
+        // works also if the mater is transparent
         // transparent: true,
         // opacity: 0.5,
       })
       const mesh = new THREE.Mesh(geometry, material)
 
-      // move the meshes any way you want!
-
-      // and when you're ready project the texture!
+      // project the texture!
       project(mesh)
 
       webgl.scene.add(mesh)
