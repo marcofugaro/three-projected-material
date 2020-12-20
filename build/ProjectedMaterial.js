@@ -4,21 +4,31 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.projectedMaterial = {}, global.THREE));
 }(this, (function (exports, THREE) { 'use strict';
 
-  function monkeyPatch(shader, { header = '', main = '', ...replaces }) {
+  function monkeyPatch(shader, { defines = '', header = '', main = '', ...replaces }) {
     let patchedShader = shader;
 
+    const replaceAll = (str, find, rep) => str.split(find).join(rep);
     Object.keys(replaces).forEach((key) => {
-      patchedShader = patchedShader.replace(key, replaces[key]);
+      patchedShader = replaceAll(patchedShader, key, replaces[key]);
     });
 
-    return patchedShader.replace(
+    patchedShader = patchedShader.replace(
       'void main() {',
       `
     ${header}
     void main() {
       ${main}
     `
-    )
+    );
+
+    const stringDefines = Object.keys(defines)
+      .map((d) => `#define ${d} ${defines[d]}`)
+      .join('\n');
+
+    return `
+    ${stringDefines}
+    ${patchedShader}
+  `
   }
 
   // run the callback when the image will be loaded
@@ -28,7 +38,7 @@
       return
     }
 
-    let interval = setInterval(() => {
+    const interval = setInterval(() => {
       if (texture.image) {
         clearInterval(interval);
         return callback(texture)
@@ -36,17 +46,45 @@
     }, 16);
   }
 
-  class ProjectedMaterial extends THREE.ShaderMaterial {
-    constructor({
-      camera,
-      texture,
-      color = 0xffffff,
-      textureScale = 1,
-      instanced = false,
-      cover = false,
-      opacity = 1,
-      ...options
-    } = {}) {
+  // https://github.com/mrdoob/three.js/blob/3c60484ce033e0dc2d434ce0eb89fc1f59d57d65/src/renderers/webgl/WebGLProgram.js#L22-L48s
+  function getEncodingComponents(encoding) {
+    switch (encoding) {
+      case THREE.LinearEncoding:
+        return ['Linear', '( value )']
+      case THREE.sRGBEncoding:
+        return ['sRGB', '( value )']
+      case THREE.RGBEEncoding:
+        return ['RGBE', '( value )']
+      case THREE.RGBM7Encoding:
+        return ['RGBM', '( value, 7.0 )']
+      case THREE.RGBM16Encoding:
+        return ['RGBM', '( value, 16.0 )']
+      case THREE.RGBDEncoding:
+        return ['RGBD', '( value, 256.0 )']
+      case THREE.GammaEncoding:
+        return ['Gamma', '( value, float( GAMMA_FACTOR ) )']
+      case THREE.LogLuvEncoding:
+        return ['LogLuv', '( value )']
+      default:
+        console.warn('THREE.WebGLProgram: Unsupported encoding:', encoding);
+        return ['Linear', '( value )']
+    }
+  }
+
+  // https://github.com/mrdoob/three.js/blob/3c60484ce033e0dc2d434ce0eb89fc1f59d57d65/src/renderers/webgl/WebGLProgram.js#L66-L71
+  function getTexelDecodingFunction(functionName, encoding) {
+    const components = getEncodingComponents(encoding);
+    return `
+    vec4 ${functionName}(vec4 value) {
+      return ${components[0]}ToLinear${components[1]};
+    }
+  `
+  }
+
+  class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
+    isProjectedMaterial = true
+
+    constructor({ camera, texture, textureScale = 1, cover = false, ...options } = {}) {
       if (!texture || !texture.isTexture) {
         throw new Error('Invalid texture passed to the ProjectedMaterial')
       }
@@ -54,6 +92,8 @@
       if (!camera || !camera.isCamera) {
         throw new Error('Invalid camera passed to the ProjectedMaterial')
       }
+
+      super(options);
 
       // make sure the camera matrices are updated
       camera.updateProjectionMatrix();
@@ -76,33 +116,37 @@
         cover
       );
 
-      super({
-        ...options,
-        lights: true,
-        defines: {
-          ...(instanced && { USE_INSTANCING: '' }),
-          ...(camera.isOrthographicCamera && { ORTHOGRAPHIC: '' }),
-        },
-        uniforms: {
-          ...THREE.ShaderLib.lambert.uniforms,
-          baseColor: { value: new THREE.Color(color) },
-          projectedTexture: { value: texture },
-          // this avoids rendering black if the texture
-          // hasn't loaded yet
-          isTextureLoaded: { value: Boolean(texture.image) },
-          viewMatrixCamera: { type: 'm4', value: viewMatrixCamera },
-          projectionMatrixCamera: { type: 'm4', value: projectionMatrixCamera },
-          modelMatrixCamera: { type: 'mat4', value: modelMatrixCamera },
-          // we will set this later when we will have positioned the object
-          savedModelMatrix: { type: 'mat4', value: new THREE.Matrix4() },
-          projPosition: { type: 'v3', value: projPosition },
-          projDirection: { type: 'v3', value: projDirection },
-          widthScaled: { value: widthScaled },
-          heightScaled: { value: heightScaled },
-          opacity: { value: opacity },
-        },
+      // apply encoding based on provided texture
+      const projectedTexelToLinear = getTexelDecodingFunction(
+        'projectedTexelToLinear',
+        texture.encoding
+      );
 
-        vertexShader: monkeyPatch(THREE.ShaderChunk.meshlambert_vert, {
+      this.uniforms = {
+        projectedTexture: { value: texture },
+        // this avoids rendering black if the texture
+        // hasn't loaded yet
+        isTextureLoaded: { value: Boolean(texture.image) },
+        viewMatrixCamera: { type: 'm4', value: viewMatrixCamera },
+        projectionMatrixCamera: { type: 'm4', value: projectionMatrixCamera },
+        modelMatrixCamera: { type: 'mat4', value: modelMatrixCamera },
+        // we will set this later when we will have positioned the object
+        savedModelMatrix: { type: 'mat4', value: new THREE.Matrix4() },
+        projPosition: { type: 'v3', value: projPosition },
+        projDirection: { type: 'v3', value: projDirection },
+        widthScaled: { value: widthScaled },
+        heightScaled: { value: heightScaled },
+      };
+
+      this.onBeforeCompile = (shader) => {
+        // expose also the material's uniforms
+        Object.assign(this.uniforms, shader.uniforms);
+        shader.uniforms = this.uniforms;
+
+        shader.vertexShader = monkeyPatch(shader.vertexShader, {
+          defines: {
+            ...(camera.isOrthographicCamera && { ORTHOGRAPHIC: '' }),
+          },
           header: /* glsl */ `
           uniform mat4 viewMatrixCamera;
           uniform mat4 projectionMatrixCamera;
@@ -117,12 +161,12 @@
           uniform mat4 savedModelMatrix;
           #endif
 
-          out vec3 vNormal;
+          out vec3 vSavedNormal;
           out vec4 vTexCoords;
           #ifndef ORTHOGRAPHIC
           out vec4 vWorldPosition;
           #endif
-          `,
+        `,
           main: /* glsl */ `
           #ifdef USE_INSTANCING
           mat4 savedModelMatrix = mat4(
@@ -133,17 +177,19 @@
           );
           #endif
 
-          vNormal = mat3(savedModelMatrix) * normal;
+          vSavedNormal = mat3(savedModelMatrix) * normal;
           vTexCoords = projectionMatrixCamera * viewMatrixCamera * savedModelMatrix * vec4(position, 1.0);;
           #ifndef ORTHOGRAPHIC
           vWorldPosition = savedModelMatrix * vec4(position, 1.0);
           #endif
-          `,
-        }),
+        `,
+        });
 
-        fragmentShader: monkeyPatch(THREE.ShaderChunk.meshlambert_frag, {
+        shader.fragmentShader = monkeyPatch(shader.fragmentShader, {
+          defines: {
+            ...(camera.isOrthographicCamera && { ORTHOGRAPHIC: '' }),
+          },
           header: /* glsl */ `
-          uniform vec3 baseColor;
           uniform sampler2D projectedTexture;
           uniform bool isTextureLoaded;
           uniform vec3 projPosition;
@@ -151,11 +197,13 @@
           uniform float widthScaled;
           uniform float heightScaled;
 
-          in vec3 vNormal;
+          in vec3 vSavedNormal;
           in vec4 vTexCoords;
           #ifndef ORTHOGRAPHIC
           in vec4 vWorldPosition;
           #endif
+
+          ${projectedTexelToLinear}
 
           float map(float value, float min1, float max1, float min2, float max2) {
             return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
@@ -179,14 +227,17 @@
           #else
           vec3 projectorDirection = normalize(projPosition - vWorldPosition.xyz);
           #endif
-          float dotProduct = dot(vNormal, projectorDirection);
+          float dotProduct = dot(vSavedNormal, projectorDirection);
           bool isFacingProjector = dotProduct > 0.000001;
 
 
-          vec4 diffuseColor = vec4(baseColor, opacity);
+          vec4 diffuseColor = vec4(diffuse, opacity);
 
           if (isFacingProjector && isInTexture && isTextureLoaded) {
             vec4 textureColor = texture(projectedTexture, uv);
+
+            // apply the enccoding from the texture
+            textureColor = projectedTexelToLinear(textureColor);
 
             // apply the material opacity
             textureColor.a *= opacity;
@@ -195,8 +246,8 @@
             diffuseColor = textureColor * textureColor.a + diffuseColor * (1.0 - textureColor.a);
           }
         `,
-        }),
-      });
+        });
+      };
 
       // listen on resize if the camera used for the projection
       // is the same used to render.
@@ -231,9 +282,6 @@
         this.uniforms.widthScaled.value = widthScaledNew;
         this.uniforms.heightScaled.value = heightScaledNew;
       });
-
-      this.isProjectedMaterial = true;
-      this.instanced = instanced;
     }
   }
 
@@ -311,10 +359,6 @@
       throw new Error(
         `No allocated data found on the geometry, please call 'allocateProjectionData(geometry)'`
       )
-    }
-
-    if (!instancedMesh.material.instanced) {
-      throw new Error(`Please pass 'instanced: true' to the ProjectedMaterial`)
     }
 
     instancedMesh.geometry.attributes.savedModelMatrix0.setXYZW(
