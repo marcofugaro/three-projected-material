@@ -12,20 +12,11 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     }
 
     super(options)
-    this.isProjectedMaterial = true
 
-    // make sure the camera matrices are updated
-    camera.updateProjectionMatrix()
-    camera.updateMatrixWorld()
-    camera.updateWorldMatrix()
+    Object.defineProperty(this, 'isProjectedMaterial', { value: true })
 
-    // get the matrices from the camera so they're fixed in camera's original position
-    const viewMatrixCamera = camera.matrixWorldInverse.clone()
-    const projectionMatrixCamera = camera.projectionMatrix.clone()
-    const modelMatrixCamera = camera.matrixWorld.clone()
-
-    const projPosition = camera.position.clone()
-    const projDirection = new THREE.Vector3(0, 0, -1).applyMatrix4(modelMatrixCamera)
+    // save a reference to the camera
+    this.camera = camera
 
     // scale to keep the image proportions and apply textureScale
     const [widthScaled, heightScaled] = computeScaledDimensions(
@@ -46,13 +37,16 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       // this avoids rendering black if the texture
       // hasn't loaded yet
       isTextureLoaded: { value: Boolean(texture.image) },
-      viewMatrixCamera: { type: 'm4', value: viewMatrixCamera },
-      projectionMatrixCamera: { type: 'm4', value: projectionMatrixCamera },
-      modelMatrixCamera: { type: 'mat4', value: modelMatrixCamera },
+      // if we called project()
+      isTextureProjected: { value: false },
+      // these will be set on project()
+      viewMatrixCamera: { type: 'm4', value: new THREE.Matrix4() },
+      projectionMatrixCamera: { type: 'm4', value: new THREE.Matrix4() },
+      modelMatrixCamera: { type: 'm4', value: new THREE.Matrix4() },
+      projPosition: { type: 'v3', value: new THREE.Vector3() },
+      projDirection: { type: 'v3', value: new THREE.Vector3(0, 0, -1) },
       // we will set this later when we will have positioned the object
-      savedModelMatrix: { type: 'mat4', value: new THREE.Matrix4() },
-      projPosition: { type: 'v3', value: projPosition },
-      projDirection: { type: 'v3', value: projDirection },
+      savedModelMatrix: { type: 'm4', value: new THREE.Matrix4() },
       widthScaled: { value: widthScaled },
       heightScaled: { value: heightScaled },
     }
@@ -111,6 +105,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
         header: /* glsl */ `
           uniform sampler2D projectedTexture;
           uniform bool isTextureLoaded;
+          uniform bool isTextureProjected;
           uniform vec3 projPosition;
           uniform vec3 projDirection;
           uniform float widthScaled;
@@ -147,12 +142,12 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
           vec3 projectorDirection = normalize(projPosition - vWorldPosition.xyz);
           #endif
           float dotProduct = dot(vSavedNormal, projectorDirection);
-          bool isFacingProjector = dotProduct > 0.000001;
+          bool isFacingProjector = dotProduct > 0.0000001;
 
 
           vec4 diffuseColor = vec4(diffuse, opacity);
 
-          if (isFacingProjector && isInTexture && isTextureLoaded) {
+          if (isFacingProjector && isInTexture && isTextureLoaded && isTextureProjected) {
             vec4 textureColor = texture(projectedTexture, uv);
 
             // apply the enccoding from the texture
@@ -258,6 +253,28 @@ export function project(mesh) {
   // we save the object model matrix so it's projected relative
   // to that position, like a snapshot
   mesh.material.uniforms.savedModelMatrix.value.copy(mesh.matrixWorld)
+
+  const { camera } = mesh.material
+
+  // make sure the camera matrices are updated
+  camera.updateProjectionMatrix()
+  camera.updateMatrixWorld()
+  camera.updateWorldMatrix()
+
+  // update the uniforms from the camera so they're
+  // fixed in the camera's position at the projection time
+  const viewMatrixCamera = camera.matrixWorldInverse
+  const projectionMatrixCamera = camera.projectionMatrix
+  const modelMatrixCamera = camera.matrixWorld
+
+  mesh.material.uniforms.viewMatrixCamera.value.copy(viewMatrixCamera)
+  mesh.material.uniforms.projectionMatrixCamera.value.copy(projectionMatrixCamera)
+  mesh.material.uniforms.modelMatrixCamera.value.copy(modelMatrixCamera)
+  mesh.material.uniforms.projPosition.value.copy(camera.position)
+  mesh.material.uniforms.projDirection.value.applyMatrix4(modelMatrixCamera)
+
+  // tell the material we've projected
+  mesh.material.uniforms.isTextureProjected.value = true
 }
 
 export function projectInstanceAt(index, instancedMesh, matrixWorld) {
@@ -308,6 +325,28 @@ export function projectInstanceAt(index, instancedMesh, matrixWorld) {
     matrixWorld.elements[14],
     matrixWorld.elements[15]
   )
+
+  const { camera } = instancedMesh.material
+
+  // make sure the camera matrices are updated
+  camera.updateProjectionMatrix()
+  camera.updateMatrixWorld()
+  camera.updateWorldMatrix()
+
+  // update the uniforms from the camera so they're
+  // fixed in the camera's position at the projection time
+  const viewMatrixCamera = camera.matrixWorldInverse
+  const projectionMatrixCamera = camera.projectionMatrix
+  const modelMatrixCamera = camera.matrixWorld
+
+  instancedMesh.material.uniforms.viewMatrixCamera.value.copy(viewMatrixCamera)
+  instancedMesh.material.uniforms.projectionMatrixCamera.value.copy(projectionMatrixCamera)
+  instancedMesh.material.uniforms.modelMatrixCamera.value.copy(modelMatrixCamera)
+  instancedMesh.material.uniforms.projPosition.value.copy(camera.position)
+  instancedMesh.material.uniforms.projDirection.value.applyMatrix4(modelMatrixCamera)
+
+  // tell the material we've projected
+  instancedMesh.material.uniforms.isTextureProjected.value = true
 }
 
 export function allocateProjectionData(geometry, instancesCount) {
