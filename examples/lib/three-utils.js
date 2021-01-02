@@ -3,6 +3,10 @@ import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders
 
 // from https://discourse.threejs.org/t/functions-to-calculate-the-visible-width-height-at-a-given-z-depth-from-a-perspective-camera/269
 export function visibleHeightAtZDepth(depth, camera) {
+  if (camera.isOrthographicCamera) {
+    return Math.abs(camera.top - camera.bottom)
+  }
+
   // compensate for cameras not positioned at z=0
   const cameraOffset = camera.position.z
   if (depth < cameraOffset) {
@@ -19,6 +23,10 @@ export function visibleHeightAtZDepth(depth, camera) {
 }
 
 export function visibleWidthAtZDepth(depth, camera) {
+  if (camera.isOrthographicCamera) {
+    return Math.abs(camera.right - camera.left)
+  }
+
   const height = visibleHeightAtZDepth(depth, camera)
   return height * camera.aspect
 }

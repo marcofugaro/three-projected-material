@@ -64,7 +64,7 @@
       const material = new ProjectedMaterial({
         camera: webgl.camera,
         texture: texture,
-        color: '#cccccc',
+        color: '#ccc',
         cover: true,
       })
 
@@ -87,8 +87,7 @@
         instancedMesh.setMatrixAt(i, dummy.matrix)
 
         // project the texture!
-        dummy.updateMatrixWorld()
-        projectInstanceAt(i, instancedMesh, dummy.matrixWorld)
+        projectInstanceAt(i, instancedMesh, dummy.matrix)
 
         // rotate the element a bit
         // so they don't show the image initially
@@ -130,7 +129,6 @@
 
       // start animation loop
       webgl.start()
-      webgl.draw()
     </script>
   </body>
 </html>

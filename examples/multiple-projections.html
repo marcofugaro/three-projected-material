@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Model example - three-projected-material</title>
+    <title>Multiple projections example - three-projected-material</title>
     <link rel="stylesheet" href="css/style.css" type="text/css" />
   </head>
   <body>
@@ -11,7 +11,7 @@
     <a
       class="source-fab"
       target="_blank"
-      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/3d-model.html"
+      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/multiple-projections.html"
       title="View source code on GitHub"
     >
       <img src="images/source.svg" />
@@ -31,7 +31,7 @@
       const webgl = new WebGLApp({
         canvas,
         // set the scene background color
-        background: '#E6E6E6',
+        background: '#fff',
         // show the fps counter from stats.js
         showFps: true,
         // enable orbit-controls
@@ -49,36 +49,59 @@
         const geometry = extractGeometry(gltf.scene)
 
         // load the example texture
-        const texture = new THREE.TextureLoader().load('./images/uv.jpg')
+        const texture = new THREE.TextureLoader().load('./images/black-spot.png')
+
+        // make an array of the same texture since we want to
+        // project always the same texture
+        const textures = Array(4).fill(texture)
 
         // create the mesh with the projected material
         const material = new ProjectedMaterial({
           camera: webgl.camera,
-          texture,
-          color: '#cccccc',
+          textures: textures,
+          color: '#fff',
           textureScale: 0.8,
         })
         const mesh = new THREE.Mesh(geometry, material)
         webgl.scene.add(mesh)
 
         // move the mesh any way you want!
-        // (in this case no translations/rotations)
+        mesh.scale.setScalar(1.4)
+        mesh.position.y = 0.1
+        mesh.rotation.y = Math.random() * Math.PI * 2
 
-        // and when you're ready project the texture!
-        project(mesh)
+        // project the texture on click
+        let textureIndex = 0
+        webgl.onPointerUp((event, { x, y, dragX, dragY }) => {
+          // return if we used the orbit controls
+          if (Math.hypot(dragX, dragY) > 2) {
+            return
+          }
 
-        // rotate for demo purposes
-        mesh.rotation.y = Math.PI / 3
-        webgl.onUpdate(() => {
-          mesh.rotation.y -= 0.003
+          // project the texture
+          project(mesh, { textureIndex })
+
+          // move the texture to where we clicked with the mouse
+          const center = new THREE.Vector2(webgl.width / 2, webgl.height / 2)
+          const mouse = new THREE.Vector2(x, y)
+
+          const offset = new THREE.Vector2().subVectors(center, mouse)
+
+          // convert it to 0 to 1 range
+          offset.divide(new THREE.Vector2(webgl.width, webgl.height))
+
+          // convert from window coordinate system to WebGL
+          // coordinate system
+          offset.y *= -1
+
+          mesh.material.uniforms.textureOffsets.value[textureIndex].copy(offset)
+
+          // increment the index
+          textureIndex = (textureIndex + 1) % textures.length
         })
 
         // add lights
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
-        directionalLight.position.set(0, 10, 10)
-        webgl.scene.add(directionalLight)
-
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1)
         webgl.scene.add(ambientLight)
 
         // start animation loop

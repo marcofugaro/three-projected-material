@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multiple projections instancing example - three-projected-material</title>
+    <link rel="stylesheet" href="css/style.css" type="text/css" />
+  </head>
+  <body>
+    <canvas id="app"></canvas>
+    <a
+      class="source-fab"
+      target="_blank"
+      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/multiple-projections-instancing.html"
+      title="View source code on GitHub"
+    >
+      <img src="images/source.svg" />
+    </a>
+
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
+      import WebGLApp from './lib/WebGLApp.js'
+      import ProjectedMaterial, {
+        allocateProjectionData,
+        projectInstanceAt,
+      } from './lib/ProjectedMaterial.module.js'
+      import State from './lib/controls-state.module.js'
+      import { visibleWidthAtZDepth, visibleHeightAtZDepth } from './lib/three-utils.js'
+      import { random } from './lib/math-utils.js'
+
+      // grab our canvas
+      const canvas = document.querySelector('#app')
+
+      // WebGLApp is a really basic wrapper around the three.js setup,
+      // it hides all unnecessary stuff not related to this example
+      const webgl = new WebGLApp({
+        canvas,
+        // set the scene background color
+        background: '#111',
+        // show the fps counter from stats.js
+        showFps: true,
+        // enable orbit-controls
+        orbitControls: true,
+        // create an ortographic camera,
+        // it will be exposed as webgl.camera
+        orthographic: true,
+      })
+
+      // attach it to the window to inspect in the console
+      window.webgl = webgl
+
+      const NUM_ELEMENTS = 50
+      const dummy = new THREE.Object3D()
+      const matrixDummy = new THREE.Matrix4()
+
+      const width = visibleWidthAtZDepth(0, webgl.camera)
+      const height = visibleHeightAtZDepth(0, webgl.camera)
+
+      // load the texture/textures
+      const texture = new THREE.TextureLoader().load('./images/lukasz-szmigiel-unsplash.jpg')
+
+      // make an array of the textures
+      const textures = [texture, texture]
+
+      // create the projected material
+      const geometry = new THREE.BoxBufferGeometry(0.3, 0.3, 0.3)
+      const material = new ProjectedMaterial({
+        camera: webgl.camera,
+        textures: textures,
+        color: webgl.background,
+        cover: true,
+      })
+
+      // allocate the projection data as attributes on the geometry
+      allocateProjectionData(geometry, NUM_ELEMENTS, textures.length)
+
+      // create the instanced mesh
+      const instancedMesh = new THREE.InstancedMesh(geometry, material, NUM_ELEMENTS)
+
+      // create a bunch of instanced elements
+      for (let i = 0; i < NUM_ELEMENTS; i++) {
+        // position the elements
+        if (i === 0) {
+          dummy.position.set(0, 0, -width / 2 - 0.15)
+          dummy.scale.set(width * 8, height * 8, 1)
+        } else if (i === 1) {
+          dummy.position.set(0, height / 2 + 0.5, 0)
+          dummy.scale.set(height * 8, 1, width * 8)
+        } else if (i < NUM_ELEMENTS * (1 / 3)) {
+          dummy.position.x = random(-width / 2, width / 2)
+          dummy.position.y = random(-height / 2, height / 2)
+          dummy.position.z = -width / 2 + 0.3
+
+          dummy.scale.x = random(1, 4)
+          dummy.scale.y = random(1, 4)
+          dummy.scale.z = random(1, 4)
+        } else if (i < NUM_ELEMENTS * (2 / 3)) {
+          dummy.position.x = random(-width / 2, width / 2)
+          dummy.position.y = height / 2 + 0.3
+          dummy.position.z = random(-width / 2, width / 2)
+
+          dummy.scale.x = random(1, 4)
+          dummy.scale.y = random(1, 4)
+          dummy.scale.z = random(1, 4)
+        } else {
+          dummy.position.x = random(-width / 2, width / 2)
+          dummy.position.y = random(-height / 2, height / 2)
+          dummy.position.z = random(-width / 2, width / 2)
+
+          dummy.scale.x = random(0.5, 3)
+          dummy.scale.y = random(0.5, 3)
+          dummy.scale.z = random(0.5, 3)
+        }
+
+        dummy.updateMatrix()
+        instancedMesh.setMatrixAt(i, dummy.matrix)
+
+        // project the first texture!
+        projectInstanceAt(i, instancedMesh, dummy.matrix, { textureIndex: 0 })
+      }
+
+      const initialCameraPosition = new THREE.Vector3().copy(webgl.camera.position)
+
+      // move the camera in a differnt position
+      webgl.camera.position.set(0, -4, 0)
+      webgl.camera.up.set(-1, 0, 0)
+      webgl.camera.lookAt(0, 0, 0)
+
+      // project the second texture!
+      for (let i = 0; i < NUM_ELEMENTS; i++) {
+        instancedMesh.getMatrixAt(i, matrixDummy)
+        projectInstanceAt(i, instancedMesh, matrixDummy, { textureIndex: 1 })
+      }
+
+      // reset the camera position
+      webgl.camera.position.copy(initialCameraPosition)
+      webgl.camera.up.copy(THREE.Object3D.DefaultUp)
+      webgl.camera.lookAt(0, 0, 0)
+
+      webgl.scene.add(instancedMesh)
+
+      // move the mesh any way you want!
+      const initialQuaternion = instancedMesh.quaternion.clone()
+
+      dummy.applyMatrix4(new THREE.Matrix4())
+      dummy.rotateX(-Math.PI / 2)
+      dummy.rotateY(Math.PI / 2)
+      const finalQuaternion = dummy.quaternion.clone()
+
+      const dummyQuaternion = new THREE.Quaternion()
+      const SPEED = 1
+      const WAIT_MS = 1500
+      let t = 0
+      let isPaused = false
+      let hasPausedRecently = false
+      webgl.onUpdate((dt, time) => {
+        const f = Math.cos(t) * 0.5 + 0.5
+
+        if (f > 0.9999 && !isPaused && !hasPausedRecently) {
+          isPaused = true
+          hasPausedRecently = true
+          setTimeout(() => (isPaused = false), WAIT_MS)
+          setTimeout(() => (hasPausedRecently = false), WAIT_MS + 100)
+        }
+
+        if (f < 0.0001 && !isPaused && !hasPausedRecently) {
+          isPaused = true
+          hasPausedRecently = true
+          setTimeout(() => (isPaused = false), WAIT_MS)
+          setTimeout(() => (hasPausedRecently = false), WAIT_MS + 100)
+        }
+
+        if (isPaused) return
+
+        t += dt * SPEED
+
+        dummyQuaternion.copy(initialQuaternion).slerp(finalQuaternion, f)
+        instancedMesh.quaternion.copy(dummyQuaternion)
+      })
+
+      // add lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1)
+      webgl.scene.add(ambientLight)
+
+      // start animation loop
+      webgl.start()
+    </script>
+  </body>
+</html>

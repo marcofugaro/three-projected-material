@@ -51,7 +51,11 @@
       const elements = new THREE.Group()
       const NUM_ELEMENTS = 130
       for (let i = 0; i < NUM_ELEMENTS; i++) {
-        const geometry = new THREE.BoxGeometry(random(0.1, 0.5), random(0.1, 0.5), random(0.1, 0.5))
+        const geometry = new THREE.BoxBufferGeometry(
+          random(0.1, 0.5),
+          random(0.1, 0.5),
+          random(0.1, 0.5)
+        )
 
         const material = new ProjectedMaterial({
           // use the orthographic camera
@@ -78,6 +82,7 @@
       // move the camera so it's not facing the
       // texture straight on at the start
       webgl.camera.position.set(-10, 5, 10)
+      webgl.camera.lookAt(0, 0, 0)
 
       // add lights
       const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
@@ -89,7 +94,6 @@
 
       // start animation loop
       webgl.start()
-      webgl.draw()
     </script>
   </body>
 </html>

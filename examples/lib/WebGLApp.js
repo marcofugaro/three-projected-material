@@ -7,8 +7,13 @@ import wrapGUI from './controls-gui.module.js'
 
 export default class WebGLApp {
   #updateListeners = []
+  #pointerdownListeners = []
+  #pointermoveListeners = []
+  #pointerupListeners = []
   #rafID
   #lastTime
+  #startX
+  #startY
 
   constructor({
     background = '#000',
@@ -19,6 +24,9 @@ export default class WebGLApp {
     far = 100,
     ...options
   } = {}) {
+    this.background = background
+    this.backgroundAlpha = backgroundAlpha
+
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: false,
@@ -56,6 +64,7 @@ export default class WebGLApp {
       this.camera.frustumSize = frustumSize
     }
     this.camera.position.copy(options.cameraPosition || new THREE.Vector3(0, 0, 4))
+    this.camera.lookAt(0, 0, 0)
     this.scene = new THREE.Scene()
 
     this.gl = this.renderer.getContext()
@@ -73,6 +82,77 @@ export default class WebGLApp {
     this.resize()
 
     // __________________________ADDONS__________________________
+
+    // really basic pointer events handler, the second argument
+    // contains the x and y relative to the top left corner
+    // of the canvas.
+    // In case of touches with multiple fingers, only the
+    // first touch is registered.
+    this.isDragging = false
+    this.canvas.addEventListener('pointerdown', (event) => {
+      if (!event.isPrimary) return
+      this.isDragging = true
+      this.#startX = event.offsetX
+      this.#startY = event.offsetY
+      // call onPointerDown method
+      this.scene.traverse((child) => {
+        if (typeof child.onPointerDown === 'function') {
+          child.onPointerDown(event, { x: event.offsetX, y: event.offsetY })
+        }
+      })
+      // call the pointerdown listeners
+      this.#pointerdownListeners.forEach((fn) => fn(event, { x: event.offsetX, y: event.offsetY }))
+    })
+    this.canvas.addEventListener('pointermove', (event) => {
+      if (!event.isPrimary) return
+      // call onPointerMove method
+      this.scene.traverse((child) => {
+        if (typeof child.onPointerMove === 'function') {
+          child.onPointerMove(event, {
+            x: event.offsetX,
+            y: event.offsetY,
+            dragX: event.offsetX - this.#startX,
+            dragY: event.offsetY - this.#startY,
+          })
+        }
+      })
+      // call the pointermove listeners
+      this.#pointermoveListeners.forEach((fn) =>
+        fn(event, {
+          x: event.offsetX,
+          y: event.offsetY,
+          dragX: event.offsetX - this.#startX,
+          dragY: event.offsetY - this.#startY,
+        })
+      )
+    })
+    this.canvas.addEventListener('pointerup', (event) => {
+      if (!event.isPrimary) return
+      this.isDragging = false
+      // call onPointerUp method
+      this.scene.traverse((child) => {
+        if (typeof child.onPointerUp === 'function') {
+          child.onPointerUp(event, {
+            x: event.offsetX,
+            y: event.offsetY,
+            dragX: event.offsetX - this.#startX,
+            dragY: event.offsetY - this.#startY,
+          })
+        }
+      })
+      // call the pointerup listeners
+      this.#pointerupListeners.forEach((fn) =>
+        fn(event, {
+          x: event.offsetX,
+          y: event.offsetY,
+          dragX: event.offsetX - this.#startX,
+          dragY: event.offsetY - this.#startY,
+        })
+      )
+
+      this.#startX = undefined
+      this.#startY = undefined
+    })
 
     // set up a simple orbit controller
     if (options.orbitControls) {
@@ -187,6 +267,62 @@ export default class WebGLApp {
 
   onUpdate(fn) {
     this.#updateListeners.push(fn)
+  }
+
+  onPointerDown(fn) {
+    this.#pointerdownListeners.push(fn)
+  }
+
+  onPointerMove(fn) {
+    this.#pointermoveListeners.push(fn)
+  }
+
+  onPointerUp(fn) {
+    this.#pointerupListeners.push(fn)
+  }
+
+  offUpdate(fn) {
+    const index = this.#updateListeners.indexOf(fn)
+
+    // return silently if the function can't be found
+    if (index === -1) {
+      return
+    }
+
+    this.#updateListeners.splice(index, 1)
+  }
+
+  offPointerDown(fn) {
+    const index = this.#pointerdownListeners.indexOf(fn)
+
+    // return silently if the function can't be found
+    if (index === -1) {
+      return
+    }
+
+    this.#pointerdownListeners.splice(index, 1)
+  }
+
+  offPointerMove(fn) {
+    const index = this.#pointermoveListeners.indexOf(fn)
+
+    // return silently if the function can't be found
+    if (index === -1) {
+      return
+    }
+
+    this.#pointermoveListeners.splice(index, 1)
+  }
+
+  offPointerUp(fn) {
+    const index = this.#pointerupListeners.indexOf(fn)
+
+    // return silently if the function can't be found
+    if (index === -1) {
+      return
+    }
+
+    this.#pointerupListeners.splice(index, 1)
   }
 
   draw = () => {

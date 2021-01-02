@@ -55,7 +55,7 @@
       const texture = new THREE.TextureLoader().load('./images/uv.jpg')
 
       // create the mesh with the projected material
-      const geometry = new THREE.BoxGeometry(1, 1, 1)
+      const geometry = new THREE.BoxBufferGeometry(1, 1, 1)
       const material = new ProjectedMaterial({
         camera,
         texture: texture,
@@ -76,7 +76,6 @@
 
       // start animation loop
       webgl.start()
-      webgl.draw()
     </script>
   </body>
 </html>

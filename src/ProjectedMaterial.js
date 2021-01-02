@@ -6,17 +6,29 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   constructor({
     camera,
     texture,
-    textures = [],
+    textures,
     textureScale = 1,
+    textureScales,
+    textureOffset = new THREE.Vector2(),
+    textureOffsets,
     cover = false,
     ...options
   } = {}) {
     if (texture) {
       textures = [texture]
+      textureScales = [textureScale]
+      textureOffsets = [textureOffset]
     }
 
     if (textures.length === 0 || textures.some((tex) => !tex || !tex.isTexture)) {
       throw new Error('Invalid texture passed to the ProjectedMaterial')
+    }
+
+    if (textureScales === undefined) {
+      textureScales = textures.map(() => textureScale)
+    }
+    if (textureOffsets === undefined) {
+      textureOffsets = textures.map(() => textureOffset.clone())
     }
 
     if (!camera || !camera.isCamera) {
@@ -31,8 +43,8 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     this.camera = camera
 
     // scale to keep the image proportions and apply textureScale
-    const scaledDimensions = textures.map((tex) =>
-      computeScaledDimensions(tex, camera, textureScale, cover)
+    const scaledDimensions = textures.map((tex, i) =>
+      computeScaledDimensions(tex, camera, textureScales[i], cover)
     )
 
     const widthsScaled = scaledDimensions.map((dimensions) => dimensions[0])
@@ -51,6 +63,8 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       isTextureLoaded: { value: textures.map((tex) => Boolean(tex.image)) },
       // don't show the texture if we haven't called project()
       isTextureProjected: { value: textures.map(() => false) },
+      // keep in mind the order in which we called project()
+      projectedTexturesIndices: { value: textures.map(() => -1) },
       // these will be set on project()
       viewMatricesCamera: { value: textures.map(() => new THREE.Matrix4()) },
       projectionMatrixCamera: { value: new THREE.Matrix4() },
@@ -60,6 +74,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       savedModelMatrices: { value: textures.map(() => new THREE.Matrix4()) },
       widthsScaled: { value: widthsScaled },
       heightsScaled: { value: heightsScaled },
+      textureOffsets: { value: textureOffsets },
     }
 
     // code-generation loop of textures
@@ -137,10 +152,12 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
           uniform sampler2D projectedTextures[N_TEXTURES];
           uniform bool isTextureLoaded[N_TEXTURES];
           uniform bool isTextureProjected[N_TEXTURES];
+          uniform int projectedTexturesIndices[N_TEXTURES];
           uniform vec3 projPositions[N_TEXTURES];
           uniform vec3 projDirections[N_TEXTURES];
           uniform float widthsScaled[N_TEXTURES];
           uniform float heightsScaled[N_TEXTURES];
+          uniform vec2 textureOffsets[N_TEXTURES];
 
           ${loopTextures(
             // TODO optimize varyings
@@ -161,8 +178,6 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
           }
         `,
         'vec4 diffuseColor = vec4( diffuse, opacity );': /* glsl */ `
-          vec4 color = vec4(0.0);
-
           // these need to be defined only once, not in the loop
           vec2 uv;
           float widthScaled;
@@ -173,7 +188,9 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
           bool isFacingProjector;
           ${loopTextures(
             (i) => /* glsl */ `
-              uv = (vTexCoords${i}.xy / vTexCoords${i}.w) * 0.5 + 0.5;
+              uv = (vTexCoords${i}.xy/ vTexCoords${i}.w) * 0.5 + 0.5;
+
+              uv += textureOffsets[${i}];
 
               // apply the corrected width and height
               widthScaled = widthsScaled[${i}];
@@ -196,6 +213,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
               isFacingProjector = dotProduct > 0.0000001;
 
 
+              vec4 color${i};
               if (isFacingProjector && isInTexture && isTextureLoaded[${i}] && isTextureProjected[${i}]) {
                 vec4 textureColor = texture(projectedTextures[${i}], uv);
 
@@ -205,13 +223,35 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
                 // apply the material opacity
                 textureColor.a *= opacity;
 
-                // TODO add an order to blending?
-                // https://learnopengl.com/Advanced-OpenGL/Blending
-                color = textureColor * textureColor.a + color * (1.0 - textureColor.a);
+                color${i} = textureColor;
               }
 
             `
           )}
+
+          vec4 colors[N_TEXTURES] = vec4[N_TEXTURES](
+            ${loopTextures(
+              (i) => /* glsl */ `
+                color${i}${i < textures.length - 1 ? ',' : ''}
+              `
+            )}
+          );
+
+          // blend the textures in order
+          vec4 color = vec4(0.0);
+
+          for (int i = 0; i < N_TEXTURES; i++) {
+            int textureIndex = projectedTexturesIndices[i];
+
+            if (textureIndex == -1) {
+              continue;
+            }
+
+            vec4 currentColor = colors[textureIndex];
+
+            // https://learnopengl.com/Advanced-OpenGL/Blending
+            color = currentColor * currentColor.a + color * (1.0 - currentColor.a);
+          }
 
           vec4 diffuseColor = vec4(diffuse, opacity);
 
@@ -229,8 +269,8 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     window.addEventListener('resize', () => {
       this.uniforms.projectionMatrixCamera.value.copy(camera.projectionMatrix)
 
-      const scaledDimensionsNew = textures.map((tex) =>
-        computeScaledDimensions(tex, camera, textureScale, cover)
+      const scaledDimensionsNew = textures.map((tex, i) =>
+        computeScaledDimensions(tex, camera, textureScales[i], cover)
       )
       const widthsScaledNew = scaledDimensionsNew.map((dimensions) => dimensions[0])
       const heightsScaledNew = scaledDimensionsNew.map((dimensions) => dimensions[1])
@@ -249,7 +289,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
         const [widthScaledNew, heightScaledNew] = computeScaledDimensions(
           tex,
           camera,
-          textureScale,
+          textureScales[i],
           cover
         )
         this.uniforms.widthsScaled.value[i] = widthScaledNew
@@ -302,18 +342,7 @@ function computeScaledDimensions(texture, camera, textureScale, cover) {
   return [widthScaled, heightScaled]
 }
 
-export function project(mesh, { textureIndex: i = 0 } = {}) {
-  if (!mesh.material.isProjectedMaterial) {
-    throw new Error(`The mesh material must be a ProjectedMaterial`)
-  }
-
-  // make sure the matrix is updated
-  mesh.updateMatrixWorld()
-
-  // we save the object model matrix so it's projected relative
-  // to that position, like a snapshot
-  mesh.material.uniforms.savedModelMatrices.value[i].copy(mesh.matrixWorld)
-
+function saveCameraMatrices(mesh, { textureIndex: i }) {
   const { material } = mesh
   const { camera } = material
 
@@ -331,19 +360,61 @@ export function project(mesh, { textureIndex: i = 0 } = {}) {
   material.uniforms.viewMatricesCamera.value[i].copy(viewMatrixCamera)
   material.uniforms.projectionMatrixCamera.value.copy(projectionMatrixCamera)
   material.uniforms.projPositions.value[i].copy(camera.position)
-  material.uniforms.projDirections.value[i].applyMatrix4(modelMatrixCamera)
+  material.uniforms.projDirections.value[i].set(0, 0, 1).applyMatrix4(modelMatrixCamera)
 
   // tell the material we've projected
   material.uniforms.isTextureProjected.value[i] = true
+
+  // add the i at the end of the array to make it sit on top
+  const projectedTexturesIndices = material.uniforms.projectedTexturesIndices.value
+  if (projectedTexturesIndices.includes(i)) {
+    projectedTexturesIndices.splice(projectedTexturesIndices.indexOf(i), 1)
+  } else {
+    projectedTexturesIndices.shift()
+  }
+  projectedTexturesIndices.push(i)
 }
 
-export function projectInstanceAt(index, instancedMesh, matrixWorld, { textureIndex: i = 0 } = {}) {
+export function project(mesh, { textureIndex: i = 0 } = {}) {
+  if (!mesh.material.isProjectedMaterial) {
+    throw new Error(`The mesh material must be a ProjectedMaterial`)
+  }
+
+  if (i >= mesh.material.uniforms.projectedTextures.value.length) {
+    throw new Error(`The textureIndex is greater than the provided textures`)
+  }
+
+  // make sure the matrix is updated
+  mesh.updateMatrixWorld()
+
+  // we save the object model matrix so it's projected relative
+  // to that position, like a snapshot
+  mesh.material.uniforms.savedModelMatrices.value[i].copy(mesh.matrixWorld)
+
+  // persist also the current camera position and matrices
+  saveCameraMatrices(mesh, { textureIndex: i })
+}
+
+export function projectInstanceAt(
+  index,
+  instancedMesh,
+  matrixWorld,
+  { textureIndex: i = 0, forceCameraSave = false } = {}
+) {
   if (!instancedMesh.isInstancedMesh) {
     throw new Error(`The provided mesh is not an InstancedMesh`)
   }
 
   if (!instancedMesh.material.isProjectedMaterial) {
     throw new Error(`The InstancedMesh material must be a ProjectedMaterial`)
+  }
+
+  if (i >= instancedMesh.material.uniforms.projectedTextures.value.length) {
+    throw new Error(`The textureIndex is greater than the provided textures`)
+  }
+
+  if (!instancedMesh.geometry.isBufferGeometry) {
+    throw new Error(`The InstancedMesh geometry must be a BufferGeometry`)
   }
 
   if (
@@ -386,28 +457,12 @@ export function projectInstanceAt(index, instancedMesh, matrixWorld, { textureIn
     matrixWorld.elements[15]
   )
 
-  const { material } = instancedMesh
-  const { camera } = material
-
-  // make sure the camera matrices are updated
-  // TODO this is called too many times, optimize
-  camera.updateProjectionMatrix()
-  camera.updateMatrixWorld()
-  camera.updateWorldMatrix()
-
-  // update the uniforms from the camera so they're
-  // fixed in the camera's position at the projection time
-  const viewMatrixCamera = camera.matrixWorldInverse
-  const projectionMatrixCamera = camera.projectionMatrix
-  const modelMatrixCamera = camera.matrixWorld
-
-  material.uniforms.viewMatricesCamera.value[i].copy(viewMatrixCamera)
-  material.uniforms.projectionMatrixCamera.value.copy(projectionMatrixCamera)
-  material.uniforms.projPositions.value[i].copy(camera.position)
-  material.uniforms.projDirections.value[i].applyMatrix4(modelMatrixCamera)
-
-  // tell the material we've projected
-  material.uniforms.isTextureProjected.value[i] = true
+  // persist the current camera position and matrices
+  // only if it's the first instance since most surely
+  // in all other instances the camera won't change
+  if (index === 0 || forceCameraSave) {
+    saveCameraMatrices(instancedMesh, { textureIndex: i })
+  }
 }
 
 export function allocateProjectionData(geometry, instancesCount, texturesCount = 1) {
