@@ -3,6 +3,61 @@ import { monkeyPatch, addLoadListener, getTexelDecodingFunction } from './three-
 import { range } from './array-utils'
 
 export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
+  #cover
+  #textureScales
+
+  get texture() {
+    return this.uniforms.projectedTextures.value[0]
+  }
+  set texture(texture) {
+    this.uniforms.projectedTextures.value[0] = texture
+  }
+
+  get textures() {
+    return this.uniforms.projectedTextures.value
+  }
+  set textures(textues) {
+    this.uniforms.projectedTextures.value = textues
+  }
+
+  get textureScale() {
+    return this.#textureScales[0]
+  }
+  set textureScale(textureScale) {
+    this.#textureScales[0] = textureScale
+    this.saveDimensions()
+  }
+
+  get textureScales() {
+    return this.#textureScales
+  }
+  set textureScales(textureScales) {
+    this.#textureScales = textureScales
+    this.saveDimensions()
+  }
+
+  get textureOffset() {
+    return this.uniforms.textureOffsets.value[0]
+  }
+  set textureOffset(textureOffset) {
+    this.uniforms.textureOffsets.value[0] = textureOffset
+  }
+
+  get textureOffsets() {
+    return this.uniforms.textureOffset.value
+  }
+  set textureOffsets(textureOffset) {
+    this.uniforms.textureOffset.value = textureOffset
+  }
+
+  get cover() {
+    return this.#cover
+  }
+  set cover(cover) {
+    this.#cover = cover
+    this.saveDimensions()
+  }
+
   constructor({
     camera,
     texture,
@@ -41,6 +96,10 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
     // save a reference to the camera
     this.camera = camera
+
+    // save the private variables
+    this.#cover = cover
+    this.#textureScales = textureScales
 
     // scale to keep the image proportions and apply textureScale
     const scaledDimensions = textures.map((tex, i) =>
@@ -269,14 +328,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     window.addEventListener('resize', () => {
       this.uniforms.projectionMatrixCamera.value.copy(camera.projectionMatrix)
 
-      const scaledDimensionsNew = textures.map((tex, i) =>
-        computeScaledDimensions(tex, camera, textureScales[i], cover)
-      )
-      const widthsScaledNew = scaledDimensionsNew.map((dimensions) => dimensions[0])
-      const heightsScaledNew = scaledDimensionsNew.map((dimensions) => dimensions[1])
-
-      this.uniforms.widthsScaled.value = widthsScaledNew
-      this.uniforms.heightsScaled.value = heightsScaledNew
+      this.saveDimensions()
     })
 
     // if the image texture passed hasn't loaded yet,
@@ -296,6 +348,17 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
         this.uniforms.heightsScaled.value[i] = heightScaledNew
       })
     })
+  }
+
+  saveDimensions() {
+    const scaledDimensions = this.textures.map((tex, i) =>
+      computeScaledDimensions(tex, this.camera, this.textureScales[i], this.cover)
+    )
+    const widthsScaled = scaledDimensions.map((dimensions) => dimensions[0])
+    const heightsScaled = scaledDimensions.map((dimensions) => dimensions[1])
+
+    this.uniforms.widthsScaled.value = widthsScaled
+    this.uniforms.heightsScaled.value = heightsScaled
   }
 }
 
