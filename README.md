@@ -2,7 +2,9 @@
 
 > Three.js Material which lets you do [Texture Projection](https://en.wikipedia.org/wiki/Projective_texture_mapping) on a 3d Model.
 
-[<img src="screenshot.png" width="600" align="center" >](https://marcofugaro.github.io/three-projected-material/)
+<p align="center">
+  [<img src="screenshot.png" width="600">](https://marcofugaro.github.io/three-projected-material/)
+</p>
 
 ## Installation
 
@@ -121,7 +123,7 @@ If you want to see the remaining code, and other usages, check out the [examples
   <a href="https://marcofugaro.github.io/three-projected-material/envmap"><img width="274" src="examples/screenshots/envmap.png" /></a>
   <a href="https://marcofugaro.github.io/three-projected-material/multiple-projections"><img width="274" src="examples/screenshots/multiple-projections.png" /></a>
   <a href="https://marcofugaro.github.io/three-projected-material/instancing"><img width="274" src="examples/screenshots/instancing.png" /></a>
-  <a href="https://marcofugaro.github.io/three-projected-material/multiple-projections-instancing"><img width="274" src="examples/screenshots/multiple-projections-instancing.png" /></a>
+  <a href="https://marcofugaro.github.io/three-projected-material/multiple-projections-instancing"><img width="274" src="examples/screenshots/multiple-projections-instancing.png" style="vertical-align: top;" /></a>
 </p>
 
 ## API Reference
