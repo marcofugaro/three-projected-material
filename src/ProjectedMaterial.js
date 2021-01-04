@@ -146,11 +146,12 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       Object.assign(this.uniforms, shader.uniforms)
       shader.uniforms = this.uniforms
 
+      shader.defines.N_TEXTURES = textures.length
+      if (camera.isOrthographicCamera) {
+        shader.defines.ORTHOGRAPHIC = ''
+      }
+
       shader.vertexShader = monkeyPatch(shader.vertexShader, {
-        defines: {
-          N_TEXTURES: textures.length,
-          ...(camera.isOrthographicCamera && { ORTHOGRAPHIC: '' }),
-        },
         header: /* glsl */ `
           uniform mat4 viewMatricesCamera[N_TEXTURES];
           uniform mat4 projectionMatrixCamera;
@@ -203,10 +204,6 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       })
 
       shader.fragmentShader = monkeyPatch(shader.fragmentShader, {
-        defines: {
-          N_TEXTURES: textures.length,
-          ...(camera.isOrthographicCamera && { ORTHOGRAPHIC: '' }),
-        },
         header: /* glsl */ `
           uniform sampler2D projectedTextures[N_TEXTURES];
           uniform bool isTextureLoaded[N_TEXTURES];

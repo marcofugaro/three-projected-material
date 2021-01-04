@@ -273,13 +273,13 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
       // expose also the material's uniforms
       Object.assign(this.uniforms, shader.uniforms);
       shader.uniforms = this.uniforms;
+      shader.defines.N_TEXTURES = textures.length;
+
+      if (camera.isOrthographicCamera) {
+        shader.defines.ORTHOGRAPHIC = '';
+      }
+
       shader.vertexShader = monkeyPatch(shader.vertexShader, {
-        defines: {
-          N_TEXTURES: textures.length,
-          ...(camera.isOrthographicCamera && {
-            ORTHOGRAPHIC: ''
-          })
-        },
         header:
         /* glsl */
         `
@@ -333,12 +333,6 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
           `)
       });
       shader.fragmentShader = monkeyPatch(shader.fragmentShader, {
-        defines: {
-          N_TEXTURES: textures.length,
-          ...(camera.isOrthographicCamera && {
-            ORTHOGRAPHIC: ''
-          })
-        },
         header:
         /* glsl */
         `

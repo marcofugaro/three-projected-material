@@ -23,3 +23,24 @@ body {
 canvas {
   outline: none;
 }
+
+.title {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90vw;
+  font-family: monospace;
+  text-align: center;
+}
+
+.title a {
+  color: #05f;
+}
+
+.title.white {
+  color: white;
+}
+.title.white a {
+  color: #0f0;
+}

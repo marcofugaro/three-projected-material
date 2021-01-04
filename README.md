@@ -2,9 +2,7 @@
 
 > Three.js Material which lets you do [Texture Projection](https://en.wikipedia.org/wiki/Projective_texture_mapping) on a 3d Model.
 
-[<img src="screenshot.png" width="600" >](https://marcofugaro.github.io/three-projected-material/)
-
-### [EXAMPLES](https://marcofugaro.github.io/three-projected-material/)
+[<img src="screenshot.png" width="600" align="center" >](https://marcofugaro.github.io/three-projected-material/)
 
 ## Installation
 
@@ -53,7 +51,7 @@ const geometry = new THREE.BoxBufferGeometry(1, 1, 1)
 const material = new ProjectedMaterial({
   camera, // the camera that acts as a projector
   texture, // the texture being projected
-  color: '#cccccc', // the color of the object if it's not projected on
+  color: '#ccc', // the color of the object if it's not projected on
   textureScale: 0.8, // scale down the texture a bit
   cover: true, // enable background-size: cover behaviour, by default it's like background-size: contain
 })
@@ -112,7 +110,21 @@ webgl.scene.add(instancedMesh)
 
 If you want to see the remaining code, and other usages, check out the [examples](https://marcofugaro.github.io/three-projected-material/).
 
-## API
+## [Examples](https://marcofugaro.github.io/three-projected-material/)
+
+<p align="center">
+  <a href="https://marcofugaro.github.io/three-projected-material/basic"><img width="274" src="examples/screenshots/basic.png" /></a>
+  <a href="https://marcofugaro.github.io/three-projected-material/same-camera"><img width="274" src="examples/screenshots/same-camera.png" /></a>
+  <a href="https://marcofugaro.github.io/three-projected-material/3d-model"><img width="274" src="examples/screenshots/3d-model.png" /></a>
+  <a href="https://marcofugaro.github.io/three-projected-material/orthographic-camera"><img width="274" src="examples/screenshots/orthographic-camera.png" /></a>
+  <a href="https://marcofugaro.github.io/three-projected-material/transparency"><img width="274" src="examples/screenshots/transparency.png" /></a>
+  <a href="https://marcofugaro.github.io/three-projected-material/envmap"><img width="274" src="examples/screenshots/envmap.png" /></a>
+  <a href="https://marcofugaro.github.io/three-projected-material/multiple-projections"><img width="274" src="examples/screenshots/multiple-projections.png" /></a>
+  <a href="https://marcofugaro.github.io/three-projected-material/instancing"><img width="274" src="examples/screenshots/instancing.png" /></a>
+  <a href="https://marcofugaro.github.io/three-projected-material/multiple-projections-instancing"><img width="274" src="examples/screenshots/multiple-projections-instancing.png" /></a>
+</p>
+
+## API Reference
 
 ### new ProjectedMaterial({ camera, texture, ...others })
 
