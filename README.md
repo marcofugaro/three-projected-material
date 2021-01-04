@@ -179,8 +179,3 @@ _**NOTE:** Don't forget to pass `instanced: true` to the projected material._
 | `index`         | The index of the instanced element to project.                                                                                     |
 | `instancedMesh` | The [InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh) with a projected material.                             |
 | `matrixWorld`   | The `matrixWorld` of the dummy you used to position the instanced mesh element. Be sure to call `.updateMatrixWorld()` beforehand. |
-
-## TODO
-
-- different materials for the rest of the object
-- multiple projections onto an object?
