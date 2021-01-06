@@ -332,19 +332,18 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
           }
         `
       });
-    }; // listen on resize if the camera used for the projection
+    }; // Listen on resize if the camera used for the projection
     // is the same used to render.
-    // do this on window resize because there is no way to
+    // We do this on window resize because there is no way to
     // listen for the resize of the renderer
-    // (or maybe do a requestanimationframe if the camera.aspect changes)
 
 
     window.addEventListener('resize', () => {
       this.uniforms.projectionMatrixCamera.value.copy(camera.projectionMatrix);
       this.saveDimensions();
-    }); // if the image texture passed hasn't loaded yet,
+    }); // If the image texture passed hasn't loaded yet,
     // wait for it to load and compute the correct proportions.
-    // this avoids rendering black while the texture is loading
+    // This avoids rendering black while the texture is loading
 
     addLoadListener(texture, () => {
       this.uniforms.isTextureLoaded.value = true;
@@ -394,6 +393,10 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
     if (Array.isArray(mesh.material)) {
       const materialIndex = mesh.material.indexOf(this);
 
+      if (!mesh.material[materialIndex].transparent) {
+        throw new Error(`You have to pass "transparent: true" to the ProjectedMaterial if you're working with multiple materials.`);
+      }
+
       if (materialIndex > 0) {
         this.uniforms.backgroundOpacity.value = 0;
       }
@@ -433,6 +436,10 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
 
     if (Array.isArray(instancedMesh.material)) {
       const materialIndex = instancedMesh.material.indexOf(this);
+
+      if (!instancedMesh.material[materialIndex].transparent) {
+        throw new Error(`You have to pass "transparent: true" to the ProjectedMaterial if you're working with multiple materials.`);
+      }
 
       if (materialIndex > 0) {
         this.uniforms.backgroundOpacity.value = 0;

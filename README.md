@@ -8,7 +8,7 @@
 
 ## Installation
 
-After having installed Three.js, install it from npm with:
+After having installed three.js, install it from npm with:
 
 ```
 npm install three-projected-material
@@ -20,7 +20,7 @@ or
 yarn add three-projected-material
 ```
 
-You can also use it from the CDN, just make sure to put this after the Three.js script:
+You can also use it from the CDN, just make sure to put this after the three.js script:
 
 ```html
 <script src="https://unpkg.com/three-projected-material"></script>
@@ -31,19 +31,19 @@ You can also use it from the CDN, just make sure to put this after the Three.js 
 You can import it like this
 
 ```js
-import ProjectedMaterial, { project } from 'three-projected-material'
+import ProjectedMaterial from 'three-projected-material'
 ```
 
 or, if you're using CommonJS
 
 ```js
-const { default: ProjectedMaterial, project } = require('three-projected-material')
+const ProjectedMaterial = require('three-projected-material').default
 ```
 
 Instead, if you install it from the CDN, its exposed under `window.projectedMaterial`, and you use it like this
 
 ```js
-const { default: ProjectedMaterial, project } = window.projectedMaterial
+const ProjectedMaterial = window.projectedMaterial.default
 ```
 
 Then, you can use it like this:
@@ -53,9 +53,11 @@ const geometry = new THREE.BoxBufferGeometry(1, 1, 1)
 const material = new ProjectedMaterial({
   camera, // the camera that acts as a projector
   texture, // the texture being projected
-  color: '#ccc', // the color of the object if it's not projected on
   textureScale: 0.8, // scale down the texture a bit
+  textureOffset: new THREE.Vector2(0.1, 0.1), // you can translate the texture if you want
   cover: true, // enable background-size: cover behaviour, by default it's like background-size: contain
+  color: '#ccc', // the color of the object if it's not projected on
+  roughness: 0.3, // you can pass any other option that belongs to MeshPhysicalMaterial
 })
 const box = new THREE.Mesh(geometry, material)
 webgl.scene.add(box)
@@ -63,54 +65,11 @@ webgl.scene.add(box)
 // move the mesh any way you want!
 box.rotation.y = -Math.PI / 4
 
-// and when you're ready project the texture!
-project(box)
+// and when you're ready project the texture on the box!
+material.project(box)
 ```
 
-ProjectedMaterial also supports instanced objects via Three.js' [InstancedMesh](https://threejs.org/docs/index.html#api/en/objects/InstancedMesh), this is an example usage:
-
-```js
-import ProjectedMaterial, {
-  allocateProjectionData,
-  projectInstanceAt,
-} from 'three-projected-material'
-
-const NUM_ELEMENTS = 1000
-const dummy = new THREE.Object3D()
-
-const geometry = new THREE.BoxBufferGeometry(1, 1, 1)
-const material = new ProjectedMaterial({
-  camera,
-  texture,
-  color: '#cccccc',
-  instanced: true,
-})
-
-// allocate the projection data
-allocateProjectionData(geometry, NUM_ELEMENTS)
-
-// create the instanced mesh
-const instancedMesh = new THREE.InstancedMesh(geometry, material, NUM_ELEMENTS)
-
-for (let i = 0; i < NUM_ELEMENTS; i++) {
-  // position the element
-  dummy.position.x = random(-width / 2, width / 2)
-  dummy.position.y = random(-height / 2, height / 2)
-  dummy.rotation.x = random(0, Math.PI * 2)
-  dummy.rotation.y = random(0, Math.PI * 2)
-  dummy.rotation.z = random(0, Math.PI * 2)
-  dummy.updateMatrix()
-  instancedMesh.setMatrixAt(i, dummy.matrix)
-
-  // project the texture!
-  dummy.updateMatrixWorld()
-  projectInstanceAt(i, instancedMesh, dummy.matrixWorld)
-}
-
-webgl.scene.add(instancedMesh)
-```
-
-If you want to see the remaining code, and other usages, check out the [examples](https://marcofugaro.github.io/three-projected-material/).
+ProjectedMaterial also supports **instanced meshes** via three.js' [InstancedMesh](https://threejs.org/docs/index.html#api/en/objects/InstancedMesh), and even **multiple projections**. Check out the examples below for a detailed guide!
 
 ## [Examples](https://marcofugaro.github.io/three-projected-material/)
 
@@ -132,19 +91,28 @@ If you want to see the remaining code, and other usages, check out the [examples
 
 Create a new material to later use for a mesh.
 
-| Option         | Default     | Description                                                                                                                                                                                                                                                                                                                                       |
-| -------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `camera`       |             | The [PerspectiveCamera](https://threejs.org/docs/#api/en/cameras/PerspectiveCamera) the texture will be projected from.                                                                                                                                                                                                                           |
-| `texture`      |             | The [Texture](https://threejs.org/docs/#api/en/textures/Texture) being projected.                                                                                                                                                                                                                                                                 |
-| `color`        | `'#ffffff'` | The color the non-projected on parts of the object will have.                                                                                                                                                                                                                                                                                     |
-| `textureScale` | 1           | Make the texture bigger or smaller.                                                                                                                                                                                                                                                                                                               |
-| `cover`        | false       | Wheter the texture should act like [`background-size: cover`](https://css-tricks.com/almanac/properties/b/background-size/) on the projector frustum. By default it works like [`background-size: contain`](https://css-tricks.com/almanac/properties/b/background-size/).                                                                        |
-| `instanced`    | false       | Wether the material will be part of an [InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh). If this is true, [`allocateProjectionData()`](#allocateprojectiondatageometry-instancescount) and [`projectInstanceAt()`](#projectinstanceatindex-instancedmesh-matrixworld) must be used instead of [`project()`](#projectmesh). |
-| `opacity`      | 1           | The opacity of the material, works like the [`Material.opacity`](https://threejs.org/docs/#api/en/materials/Material.opacity).                                                                                                                                                                                                                    |
+| Option          | Default               | Description                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `camera`        |                       | The [PerspectiveCamera](https://threejs.org/docs/#api/en/cameras/PerspectiveCamera) the texture will be projected from.                                                                                                                                                                                                                                                                         |
+| `texture`       |                       | The [Texture](https://threejs.org/docs/#api/en/textures/Texture) being projected.                                                                                                                                                                                                                                                                                                               |
+| `textureScale`  | 1                     | Make the texture bigger or smaller.                                                                                                                                                                                                                                                                                                                                                             |
+| `textureOffset` | `new THREE.Vector2()` | Offset the texture in a x or y direction. The unit system goes from 0 to 1, from the bottom left corner to the top right corner of the projector camera frustum.                                                                                                                                                                                                                                |
+| `cover`         | false                 | Wheter the texture should act like [`background-size: cover`](https://css-tricks.com/almanac/properties/b/background-size/) on the projector frustum. By default it works like [`background-size: contain`](https://css-tricks.com/almanac/properties/b/background-size/).                                                                                                                      |
+| `...options`    |                       | Other options you pass to any three.js material like `color`, `opacity`, `envMap` and so on. The material is built from a [MeshPhysicalMaterial](https://threejs.org/docs/index.html#api/en/materials/MeshPhysicalMaterial), so you can pass any property of that material and of its parent [MeshStandardMaterial](https://threejs.org/docs/index.html#api/en/materials/MeshStandardMaterial). |
 
-### project(mesh)
+These properties are exposed as properties of the material, so you can change them later.
 
-Project the texture from the camera on the mesh.
+For example, to update the material texture and change its scale:
+
+```js
+material.texture = newTexture
+material.textureScale = 0.8
+```
+
+### material.project(mesh)
+
+Project the texture from the camera on the mesh. With this method we "take a snaphot" of the current mesh and camera position in space. The
+After calling this method, you can move the mesh or the camera freely.
 
 | Option | Description                                          |
 | ------ | ---------------------------------------------------- |
@@ -154,28 +122,28 @@ Project the texture from the camera on the mesh.
 
 Allocate the data that will be used when projecting on an [InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh). Use this on the geometry that will be used in pair with a `ProjectedMaterial` when initializing `InstancedMesh`.
 
-_**NOTE:** Don't forget to pass `instanced: true` to the projected material._
+This needs to be called before `.projectInstanceAt()`.
 
 | Option           | Description                                                                   |
 | ---------------- | ----------------------------------------------------------------------------- |
 | `geometry`       | The geometry that will be passed to the `InstancedMesh`.                      |
 | `instancesCount` | The number of instances, the same that will be passed to the `InstancedMesh`. |
 
-### projectInstanceAt(index, instancedMesh, matrixWorld)
+### material.projectInstanceAt(index, instancedMesh, matrix)
 
-Do the projection for an [InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh). Don't forget to call `updateMatrixWorld()` like you do before calling `InstancedMesh.setMatrixAt()`.
+Do the projection for an [InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh). Don't forget to call `updateMatrix()` like you do before calling `InstancedMesh.setMatrixAt()`.
+
+To do projection an an instanced mesh, the geometry needs to be prepared with `allocateProjectionData()` beforehand.
 
 ```js
-dummy.updateMatrixWorld()
-projectInstanceAt(i, instancedMesh, dummy.matrixWorld)
+dummy.updateMatrix()
+projectInstanceAt(i, instancedMesh, dummy.matrix)
 ```
 
-[Link to the full example](https://marcofugaro.github.io/three-projected-material/instancing).
+[Link to the full example about instancing](https://marcofugaro.github.io/three-projected-material/instancing).
 
-_**NOTE:** Don't forget to pass `instanced: true` to the projected material._
-
-| Option          | Description                                                                                                                        |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `index`         | The index of the instanced element to project.                                                                                     |
-| `instancedMesh` | The [InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh) with a projected material.                             |
-| `matrixWorld`   | The `matrixWorld` of the dummy you used to position the instanced mesh element. Be sure to call `.updateMatrixWorld()` beforehand. |
+| Option          | Description                                                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `index`         | The index of the instanced element to project.                                                                           |
+| `instancedMesh` | The [InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh) with a projected material.                   |
+| `matrix`        | The `matrix` of the dummy you used to position the instanced mesh element. Be sure to call `.updateMatrix()` beforehand. |
