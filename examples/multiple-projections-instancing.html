@@ -23,10 +23,7 @@
     <script type="module">
       import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial, {
-        allocateProjectionData,
-        projectInstanceAt,
-      } from './lib/ProjectedMaterial.module.js'
+      import ProjectedMaterial, { allocateProjectionData } from './lib/ProjectedMaterial.module.js'
       import State from './lib/controls-state.module.js'
       import { visibleWidthAtZDepth, visibleHeightAtZDepth } from './lib/three-utils.js'
       import { random } from './lib/math-utils.js'
@@ -62,23 +59,35 @@
       // load the texture/textures
       const texture = new THREE.TextureLoader().load('./images/lukasz-szmigiel-unsplash.jpg')
 
-      // make an array of the textures
-      const textures = [texture, texture]
-
-      // create the projected material
+      // create a starting geometry
       const geometry = new THREE.BoxBufferGeometry(0.3, 0.3, 0.3)
-      const material = new ProjectedMaterial({
-        camera: webgl.camera,
-        textures: textures,
-        color: webgl.background,
-        cover: true,
-      })
+      geometry.clearGroups()
+
+      // make an array of materials
+      const materials = []
+      for (let i = 0; i < 2; i++) {
+        const material = new ProjectedMaterial({
+          camera: webgl.camera,
+          texture,
+          color: webgl.background,
+          cover: true,
+          // needed for multiple materials
+          transparent: true,
+        })
+
+        materials.push(material)
+
+        // reserve a group for the material on the geometry
+        // https://stackoverflow.com/a/49708915
+        geometry.addGroup(0, Infinity, i)
+      }
 
       // allocate the projection data as attributes on the geometry
-      allocateProjectionData(geometry, NUM_ELEMENTS, textures.length)
+      allocateProjectionData(geometry, NUM_ELEMENTS)
 
       // create the instanced mesh
-      const instancedMesh = new THREE.InstancedMesh(geometry, material, NUM_ELEMENTS)
+      const instancedMesh = new THREE.InstancedMesh(geometry, materials, NUM_ELEMENTS)
+      webgl.scene.add(instancedMesh)
 
       // create a bunch of instanced elements
       for (let i = 0; i < NUM_ELEMENTS; i++) {
@@ -119,12 +128,12 @@
         instancedMesh.setMatrixAt(i, dummy.matrix)
 
         // project the first texture!
-        projectInstanceAt(i, instancedMesh, dummy.matrix, { textureIndex: 0 })
+        instancedMesh.material[0].projectInstanceAt(i, instancedMesh, dummy.matrix)
       }
 
       const initialCameraPosition = new THREE.Vector3().copy(webgl.camera.position)
 
-      // move the camera in a differnt position
+      // move the camera in a different position
       webgl.camera.position.set(0, -4, 0)
       webgl.camera.up.set(-1, 0, 0)
       webgl.camera.lookAt(0, 0, 0)
@@ -132,7 +141,7 @@
       // project the second texture!
       for (let i = 0; i < NUM_ELEMENTS; i++) {
         instancedMesh.getMatrixAt(i, matrixDummy)
-        projectInstanceAt(i, instancedMesh, matrixDummy, { textureIndex: 1 })
+        instancedMesh.material[1].projectInstanceAt(i, instancedMesh, matrixDummy)
       }
 
       // reset the camera position
@@ -140,9 +149,8 @@
       webgl.camera.up.copy(THREE.Object3D.DefaultUp)
       webgl.camera.lookAt(0, 0, 0)
 
-      webgl.scene.add(instancedMesh)
-
-      // move the mesh any way you want!
+      // move the mesh any way you want! in this case
+      // let's do an animation
       const initialQuaternion = instancedMesh.quaternion.clone()
 
       dummy.applyMatrix4(new THREE.Matrix4())

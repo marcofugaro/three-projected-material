@@ -20,7 +20,7 @@
     <script type="module">
       import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial, { project } from './lib/ProjectedMaterial.module.js'
+      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
 
       // grab our canvas
       const canvas = document.querySelector('#app')
@@ -52,8 +52,8 @@
       const geometry = new THREE.IcosahedronGeometry(1, 6)
       const material = new ProjectedMaterial({
         camera: webgl.camera,
-        texture: texture,
-        envMap: envMap,
+        texture,
+        envMap,
         textureScale: 2,
         // convert the color since gamma is enabled
         color: new THREE.Color('#cccccc').convertSRGBToLinear(),
@@ -62,10 +62,9 @@
       })
 
       const mesh = new THREE.Mesh(geometry, material)
-
-      project(mesh)
-
       webgl.scene.add(mesh)
+
+      material.project(mesh)
 
       // set the scene background
       webgl.scene.background = envMap

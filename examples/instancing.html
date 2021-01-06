@@ -20,10 +20,7 @@
     <script type="module">
       import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial, {
-        allocateProjectionData,
-        projectInstanceAt,
-      } from './lib/ProjectedMaterial.module.js'
+      import ProjectedMaterial, { allocateProjectionData } from './lib/ProjectedMaterial.module.js'
       import State from './lib/controls-state.module.js'
       import { visibleWidthAtZDepth, visibleHeightAtZDepth } from './lib/three-utils.js'
       import { random } from './lib/math-utils.js'
@@ -63,7 +60,7 @@
       const geometry = new THREE.TetrahedronBufferGeometry()
       const material = new ProjectedMaterial({
         camera: webgl.camera,
-        texture: texture,
+        texture,
         color: '#ccc',
         cover: true,
       })
@@ -87,7 +84,7 @@
         instancedMesh.setMatrixAt(i, dummy.matrix)
 
         // project the texture!
-        projectInstanceAt(i, instancedMesh, dummy.matrix)
+        material.projectInstanceAt(i, instancedMesh, dummy.matrix)
 
         // rotate the element a bit
         // so they don't show the image initially

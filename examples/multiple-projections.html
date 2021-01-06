@@ -26,7 +26,7 @@
     <script type="module">
       import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial, { project } from './lib/ProjectedMaterial.module.js'
+      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
       import { loadGltf, extractGeometry } from './lib/three-utils.js'
 
       // grab our canvas
@@ -53,30 +53,51 @@
         // load the model and extract the geometry from it
         const gltf = await loadGltf('./models/suzanne.gltf')
         const geometry = extractGeometry(gltf.scene)
+        geometry.clearGroups()
 
         // load the example texture
         const texture = new THREE.TextureLoader().load('./images/black-spot.png')
 
-        // make an array of the same texture since we want to
-        // project always the same texture
-        const textures = Array(4).fill(texture)
+        // make an array of materials with the same texture
+        const materials = []
+        for (let i = 0; i < 10; i++) {
+          const material = new ProjectedMaterial({
+            camera: webgl.camera,
+            texture: texture,
+            color: '#fff',
+            textureScale: 0.8,
+            // needed for multiple materials
+            transparent: true,
+          })
 
-        // create the mesh with the projected material
-        const material = new ProjectedMaterial({
-          camera: webgl.camera,
-          textures: textures,
-          color: '#fff',
-          textureScale: 0.8,
-        })
-        const mesh = new THREE.Mesh(geometry, material)
+          materials.push(material)
+
+          // reserve a group for the material on the geometry
+          // https://stackoverflow.com/a/49708915
+          geometry.addGroup(0, Infinity, i)
+        }
+
+        // create the mesh with the projected materials
+        const mesh = new THREE.Mesh(geometry, materials)
         webgl.scene.add(mesh)
+
+        // since we're not projecting straight away,
+        // we need to tell the other materials to be transparent
+        // until they're projected on
+        mesh.material.forEach((material, i) => {
+          if (i === 0) {
+            return
+          }
+
+          material.uniforms.backgroundOpacity.value = 0
+        })
 
         // move the mesh any way you want!
         mesh.scale.setScalar(1.3)
         mesh.rotation.y = Math.random() * Math.PI * 2
 
         // project the texture on click
-        let textureIndex = 0
+        let materialIndex = 0
         webgl.onPointerUp((event, { x, y, dragX, dragY }) => {
           // return if we used the orbit controls
           if (Math.hypot(dragX, dragY) > 2) {
@@ -84,7 +105,7 @@
           }
 
           // project the texture
-          project(mesh, { textureIndex })
+          mesh.material[materialIndex].project(mesh)
 
           // move the texture to where we clicked with the mouse
           const center = new THREE.Vector2(webgl.width / 2, webgl.height / 2)
@@ -99,10 +120,10 @@
           // coordinate system
           offset.y *= -1
 
-          mesh.material.uniforms.textureOffsets.value[textureIndex].copy(offset)
+          mesh.material[materialIndex].textureOffset = offset
 
           // increment the index
-          textureIndex = (textureIndex + 1) % textures.length
+          materialIndex = (materialIndex + 1) % mesh.material.length
         })
 
         // add lights

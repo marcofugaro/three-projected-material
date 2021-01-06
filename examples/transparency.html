@@ -20,7 +20,7 @@
     <script type="module">
       import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial, { project } from './lib/ProjectedMaterial.module.js'
+      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
       import { random } from './lib/math-utils.js'
 
       // grab our canvas
@@ -58,7 +58,7 @@
       const mesh = new THREE.Mesh(geometry, material)
 
       // project the texture!
-      project(mesh)
+      material.project(mesh)
 
       webgl.scene.add(mesh)
 

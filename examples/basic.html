@@ -20,7 +20,7 @@
     <script type="module">
       import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial, { project } from './lib/ProjectedMaterial.module.js'
+      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
 
       // grab our canvas
       const canvas = document.querySelector('#app')
@@ -58,7 +58,7 @@
       const geometry = new THREE.BoxBufferGeometry(1, 1, 1)
       const material = new ProjectedMaterial({
         camera,
-        texture: texture,
+        texture,
         color: '#37E140',
       })
       const box = new THREE.Mesh(geometry, material)
@@ -68,7 +68,7 @@
       box.rotation.y = -Math.PI / 4
 
       // and when you're ready project the texture!
-      project(box)
+      material.project(box)
 
       // add lights
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)

@@ -20,7 +20,7 @@
     <script type="module">
       import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial, { project } from './lib/ProjectedMaterial.module.js'
+      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
       import { random } from './lib/math-utils.js'
 
       // grab our canvas
@@ -49,10 +49,12 @@
       const NUM_ELEMENTS = 50
       for (let i = 0; i < NUM_ELEMENTS; i++) {
         const geometry = new THREE.IcosahedronGeometry(random(0.1, 0.5))
+        // each element will have a different material
+        // since each one will have a different position
         const material = new ProjectedMaterial({
           // use the scene camera itself
           camera: webgl.camera,
-          texture: texture,
+          texture,
           color: '#3149D5',
           textureScale: 0.8,
         })
@@ -74,7 +76,7 @@
         element.rotation.z = random(0, Math.PI * 2)
 
         // and when you're ready project the texture!
-        project(element)
+        material.project(element)
 
         elements.add(element)
       }

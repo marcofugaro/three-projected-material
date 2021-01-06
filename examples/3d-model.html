@@ -20,7 +20,7 @@
     <script type="module">
       import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial, { project } from './lib/ProjectedMaterial.module.js'
+      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
       import { loadGltf, extractGeometry } from './lib/three-utils.js'
 
       // grab our canvas
@@ -55,7 +55,7 @@
         const material = new ProjectedMaterial({
           camera: webgl.camera,
           texture,
-          color: '#cccccc',
+          color: '#ccc',
           textureScale: 0.8,
         })
         const mesh = new THREE.Mesh(geometry, material)
@@ -65,7 +65,7 @@
         // (in this case no translations/rotations)
 
         // and when you're ready project the texture!
-        project(mesh)
+        material.project(mesh)
 
         // rotate for demo purposes
         mesh.rotation.y = Math.PI / 3

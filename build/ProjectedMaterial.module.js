@@ -94,64 +94,33 @@ function getTexelDecodingFunction(functionName, encoding) {
   `;
 }
 
-// returns an array of numbers that go from 0 to n - 1
-// a simpler version of https://lodash.com/docs/4.17.15#range
-function range(n) {
-  return [...Array(n).keys()];
-}
-
 var _cover = _classPrivateFieldLooseKey("cover");
 
-var _textureScales = _classPrivateFieldLooseKey("textureScales");
+var _textureScale = _classPrivateFieldLooseKey("textureScale");
 
 class ProjectedMaterial extends MeshPhysicalMaterial {
   get texture() {
-    return this.uniforms.projectedTextures.value[0];
+    return this.uniforms.projectedTexture.value;
   }
 
   set texture(texture) {
-    this.uniforms.projectedTextures.value[0] = texture;
-  }
-
-  get textures() {
-    return this.uniforms.projectedTextures.value;
-  }
-
-  set textures(textues) {
-    this.uniforms.projectedTextures.value = textues;
+    this.uniforms.projectedTexture.value = texture;
   }
 
   get textureScale() {
-    return _classPrivateFieldLooseBase(this, _textureScales)[_textureScales][0];
+    return _classPrivateFieldLooseBase(this, _textureScale)[_textureScale];
   }
 
   set textureScale(textureScale) {
-    _classPrivateFieldLooseBase(this, _textureScales)[_textureScales][0] = textureScale;
-    this.saveDimensions();
-  }
-
-  get textureScales() {
-    return _classPrivateFieldLooseBase(this, _textureScales)[_textureScales];
-  }
-
-  set textureScales(textureScales) {
-    _classPrivateFieldLooseBase(this, _textureScales)[_textureScales] = textureScales;
+    _classPrivateFieldLooseBase(this, _textureScale)[_textureScale] = textureScale;
     this.saveDimensions();
   }
 
   get textureOffset() {
-    return this.uniforms.textureOffsets.value[0];
-  }
-
-  set textureOffset(textureOffset) {
-    this.uniforms.textureOffsets.value[0] = textureOffset;
-  }
-
-  get textureOffsets() {
     return this.uniforms.textureOffset.value;
   }
 
-  set textureOffsets(textureOffset) {
+  set textureOffset(textureOffset) {
     this.uniforms.textureOffset.value = textureOffset;
   }
 
@@ -167,30 +136,13 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
   constructor({
     camera,
     texture,
-    textures,
     textureScale = 1,
-    textureScales,
     textureOffset = new Vector2(),
-    textureOffsets,
     cover = false,
     ...options
   } = {}) {
-    if (texture) {
-      textures = [texture];
-      textureScales = [textureScale];
-      textureOffsets = [textureOffset];
-    }
-
-    if (textures.length === 0 || textures.some(tex => !tex || !tex.isTexture)) {
+    if (!(texture != null && texture.isTexture)) {
       throw new Error('Invalid texture passed to the ProjectedMaterial');
-    }
-
-    if (textureScales === undefined) {
-      textureScales = textures.map(() => textureScale);
-    }
-
-    if (textureOffsets === undefined) {
-      textureOffsets = textures.map(() => textureOffset.clone());
     }
 
     if (!camera || !camera.isCamera) {
@@ -202,7 +154,7 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
       writable: true,
       value: void 0
     });
-    Object.defineProperty(this, _textureScales, {
+    Object.defineProperty(this, _textureScale, {
       writable: true,
       value: void 0
     });
@@ -213,67 +165,61 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
     this.camera = camera; // save the private variables
 
     _classPrivateFieldLooseBase(this, _cover)[_cover] = cover;
-    _classPrivateFieldLooseBase(this, _textureScales)[_textureScales] = textureScales; // scale to keep the image proportions and apply textureScale
+    _classPrivateFieldLooseBase(this, _textureScale)[_textureScale] = textureScale; // scale to keep the image proportions and apply textureScale
 
-    const scaledDimensions = textures.map((tex, i) => computeScaledDimensions(tex, camera, textureScales[i], cover));
-    const widthsScaled = scaledDimensions.map(dimensions => dimensions[0]);
-    const heightsScaled = scaledDimensions.map(dimensions => dimensions[1]); // apply encoding based on provided texture
+    const [widthScaled, heightScaled] = computeScaledDimensions(texture, camera, textureScale, cover); // apply encoding based on provided texture
 
-    const projectedTexelToLinear = getTexelDecodingFunction('projectedTexelToLinear', textures[0].encoding);
+    const projectedTexelToLinear = getTexelDecodingFunction('projectedTexelToLinear', texture.encoding);
     this.uniforms = {
-      projectedTextures: {
-        value: textures
+      projectedTexture: {
+        value: texture
       },
       // this avoids rendering black if the texture
       // hasn't loaded yet
       isTextureLoaded: {
-        value: textures.map(tex => Boolean(tex.image))
+        value: Boolean(texture.image)
       },
       // don't show the texture if we haven't called project()
       isTextureProjected: {
-        value: textures.map(() => false)
+        value: false
       },
-      // keep in mind the order in which we called project()
-      projectedTexturesIndices: {
-        value: textures.map(() => -1)
+      // if we have multiple materials we want to show the
+      // background only of the first material
+      backgroundOpacity: {
+        value: 1
       },
       // these will be set on project()
-      viewMatricesCamera: {
-        value: textures.map(() => new Matrix4())
+      viewMatrixCamera: {
+        value: new Matrix4()
       },
       projectionMatrixCamera: {
         value: new Matrix4()
       },
-      projPositions: {
-        value: textures.map(() => new Vector3())
+      projPosition: {
+        value: new Vector3()
       },
-      projDirections: {
-        value: textures.map(() => new Vector3(0, 0, -1))
+      projDirection: {
+        value: new Vector3(0, 0, -1)
       },
       // we will set this later when we will have positioned the object
-      savedModelMatrices: {
-        value: textures.map(() => new Matrix4())
+      savedModelMatrix: {
+        value: new Matrix4()
       },
-      widthsScaled: {
-        value: widthsScaled
+      widthScaled: {
+        value: widthScaled
       },
-      heightsScaled: {
-        value: heightsScaled
+      heightScaled: {
+        value: heightScaled
       },
-      textureOffsets: {
-        value: textureOffsets
+      textureOffset: {
+        value: textureOffset
       }
-    }; // code-generation loop of textures
-
-    function loopTextures(fn) {
-      return range(textures.length).map(fn).join('');
-    }
+    };
 
     this.onBeforeCompile = shader => {
       // expose also the material's uniforms
       Object.assign(this.uniforms, shader.uniforms);
       shader.uniforms = this.uniforms;
-      shader.defines.N_TEXTURES = textures.length;
 
       if (camera.isOrthographicCamera) {
         shader.defines.ORTHOGRAPHIC = '';
@@ -283,80 +229,62 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
         header:
         /* glsl */
         `
-          uniform mat4 viewMatricesCamera[N_TEXTURES];
+          uniform mat4 viewMatrixCamera;
           uniform mat4 projectionMatrixCamera;
 
           #ifdef USE_INSTANCING
-          ${loopTextures(i =>
-        /* glsl */
-        `
-              in vec4 savedModelMatrix0_${i};
-              in vec4 savedModelMatrix1_${i};
-              in vec4 savedModelMatrix2_${i};
-              in vec4 savedModelMatrix3_${i};
-            `)}
+          in vec4 savedModelMatrix0;
+          in vec4 savedModelMatrix1;
+          in vec4 savedModelMatrix2;
+          in vec4 savedModelMatrix3;
           #else
-          uniform mat4 savedModelMatrices[N_TEXTURES];
+          uniform mat4 savedModelMatrix;
           #endif
 
-          ${loopTextures(i =>
-        /* glsl */
-        `
-              out vec3 vSavedNormal${i};
-              out vec4 vTexCoords${i};
-              #ifndef ORTHOGRAPHIC
-              out vec4 vWorldPosition${i};
-              #endif
-            `)}
+          out vec3 vSavedNormal;
+          out vec4 vTexCoords;
+          #ifndef ORTHOGRAPHIC
+          out vec4 vWorldPosition;
+          #endif
         `,
-        main: loopTextures(i =>
+        main:
         /* glsl */
         `
-            #ifdef USE_INSTANCING
-            mat4 savedModelMatrix${i} = mat4(
-              savedModelMatrix0_${i},
-              savedModelMatrix1_${i},
-              savedModelMatrix2_${i},
-              savedModelMatrix3_${i}
-            );
-            #else
-            mat4 savedModelMatrix${i} = savedModelMatrices[${i}];
-            #endif
+          #ifdef USE_INSTANCING
+          mat4 savedModelMatrix = mat4(
+            savedModelMatrix0,
+            savedModelMatrix1,
+            savedModelMatrix2,
+            savedModelMatrix3
+          );
+          #endif
 
-            mat4 viewMatrixCamera${i} = viewMatricesCamera[${i}];
-
-            vSavedNormal${i} = mat3(savedModelMatrix${i}) * normal;
-            vTexCoords${i} = projectionMatrixCamera * viewMatrixCamera${i} * savedModelMatrix${i} * vec4(position, 1.0);
-            #ifndef ORTHOGRAPHIC
-            vWorldPosition${i} = savedModelMatrix${i} * vec4(position, 1.0);
-            #endif
-          `)
+          vSavedNormal = mat3(savedModelMatrix) * normal;
+          vTexCoords = projectionMatrixCamera * viewMatrixCamera * savedModelMatrix * vec4(position, 1.0);
+          #ifndef ORTHOGRAPHIC
+          vWorldPosition = savedModelMatrix * vec4(position, 1.0);
+          #endif
+        `
       });
       shader.fragmentShader = monkeyPatch(shader.fragmentShader, {
         header:
         /* glsl */
         `
-          uniform sampler2D projectedTextures[N_TEXTURES];
-          uniform bool isTextureLoaded[N_TEXTURES];
-          uniform bool isTextureProjected[N_TEXTURES];
-          uniform int projectedTexturesIndices[N_TEXTURES];
-          uniform vec3 projPositions[N_TEXTURES];
-          uniform vec3 projDirections[N_TEXTURES];
-          uniform float widthsScaled[N_TEXTURES];
-          uniform float heightsScaled[N_TEXTURES];
-          uniform vec2 textureOffsets[N_TEXTURES];
+          uniform sampler2D projectedTexture;
+          uniform bool isTextureLoaded;
+          uniform bool isTextureProjected;
+          uniform float backgroundOpacity;
+          uniform vec3 projPosition;
+          uniform vec3 projDirection;
+          uniform float widthScaled;
+          uniform float heightScaled;
+          uniform vec2 textureOffset;
 
-          ${loopTextures( // TODO optimize varyings
-        i =>
-        /* glsl */
-        `
-              in vec3 vSavedNormal${i};
-              in vec4 vTexCoords${i};
-              #ifndef ORTHOGRAPHIC
-              in vec4 vWorldPosition${i};
-              #endif
-            `)}
-
+          in vec3 vSavedNormal;
+          in vec4 vTexCoords;
+          #ifndef ORTHOGRAPHIC
+          in vec4 vWorldPosition;
+          #endif
 
           ${projectedTexelToLinear}
 
@@ -367,86 +295,42 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
         'vec4 diffuseColor = vec4( diffuse, opacity );':
         /* glsl */
         `
-          // these need to be defined only once, not in the loop
-          vec2 uv;
-          float widthScaled;
-          float heightScaled;
-          bool isInTexture;
-          vec3 projectorDirection;
-          float dotProduct;
-          bool isFacingProjector;
-          ${loopTextures(i =>
-        /* glsl */
-        `
-              uv = (vTexCoords${i}.xy/ vTexCoords${i}.w) * 0.5 + 0.5;
+          vec2 uv = (vTexCoords.xy/ vTexCoords.w) * 0.5 + 0.5;
 
-              uv += textureOffsets[${i}];
+          uv += textureOffset;
 
-              // apply the corrected width and height
-              widthScaled = widthsScaled[${i}];
-              heightScaled = heightsScaled[${i}];
-              uv.x = map(uv.x, 0.0, 1.0, 0.5 - widthScaled / 2.0, 0.5 + widthScaled / 2.0);
-              uv.y = map(uv.y, 0.0, 1.0, 0.5 - heightScaled / 2.0, 0.5 + heightScaled / 2.0);
+          // apply the corrected width and height
+          uv.x = map(uv.x, 0.0, 1.0, 0.5 - widthScaled / 2.0, 0.5 + widthScaled / 2.0);
+          uv.y = map(uv.y, 0.0, 1.0, 0.5 - heightScaled / 2.0, 0.5 + heightScaled / 2.0);
 
+          // this makes sure we don't sample out of the texture
+          bool isInTexture = (max(uv.x, uv.y) <= 1.0 && min(uv.x, uv.y) >= 0.0);
 
-              // this makes sure we don't sample out of the texture
-              isInTexture = (max(uv.x, uv.y) <= 1.0 && min(uv.x, uv.y) >= 0.0);
+          // this makes sure we don't render also the back of the object
+          #ifdef ORTHOGRAPHIC
+          vec3 projectorDirection = projDirection;
+          #else
+          vec3 projectorDirection = normalize(projPosition - vWorldPosition.xyz);
+          #endif
+          float dotProduct = dot(vSavedNormal, projectorDirection);
+          bool isFacingProjector = dotProduct > 0.0000001;
 
 
-              // this makes sure we don't render also the back of the object
-              #ifdef ORTHOGRAPHIC
-              projectorDirection = projDirections[${i}];
-              #else
-              projectorDirection = normalize(projPositions[${i}] - vWorldPosition${i}.xyz);
-              #endif
-              dotProduct = dot(vSavedNormal${i}, projectorDirection);
-              isFacingProjector = dotProduct > 0.0000001;
+          vec4 diffuseColor = vec4(diffuse, opacity * backgroundOpacity);
 
+          if (isFacingProjector && isInTexture && isTextureLoaded && isTextureProjected) {
+            vec4 textureColor = texture(projectedTexture, uv);
 
-              vec4 color${i};
-              if (isFacingProjector && isInTexture && isTextureLoaded[${i}] && isTextureProjected[${i}]) {
-                vec4 textureColor = texture(projectedTextures[${i}], uv);
+            // apply the enccoding from the texture
+            textureColor = projectedTexelToLinear(textureColor);
 
-                // apply the enccoding from the texture
-                textureColor = projectedTexelToLinear(textureColor);
-
-                // apply the material opacity
-                textureColor.a *= opacity;
-
-                color${i} = textureColor;
-              }
-
-            `)}
-
-          vec4 colors[N_TEXTURES] = vec4[N_TEXTURES](
-            ${loopTextures(i =>
-        /* glsl */
-        `
-                color${i}${i < textures.length - 1 ? ',' : ''}
-              `)}
-          );
-
-          // blend the textures in order
-          vec4 color = vec4(0.0);
-
-          for (int i = 0; i < N_TEXTURES; i++) {
-            int textureIndex = projectedTexturesIndices[i];
-
-            if (textureIndex == -1) {
-              continue;
-            }
-
-            vec4 currentColor = colors[textureIndex];
+            // apply the material opacity
+            textureColor.a *= opacity;
 
             // https://learnopengl.com/Advanced-OpenGL/Blending
-            color = currentColor * currentColor.a + color * (1.0 - currentColor.a);
+            diffuseColor = textureColor * textureColor.a + diffuseColor * (1.0 - textureColor.a);
           }
-
-          vec4 diffuseColor = vec4(diffuse, opacity);
-
-          // https://learnopengl.com/Advanced-OpenGL/Blending
-          diffuseColor = color * color.a + diffuseColor * (1.0 - color.a);
-          `
+        `
       });
     }; // listen on resize if the camera used for the projection
     // is the same used to render.
@@ -462,22 +346,105 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
     // wait for it to load and compute the correct proportions.
     // this avoids rendering black while the texture is loading
 
-    textures.forEach((tex, i) => {
-      addLoadListener(tex, () => {
-        this.uniforms.isTextureLoaded.value[i] = true;
-        const [widthScaledNew, heightScaledNew] = computeScaledDimensions(tex, camera, textureScales[i], cover);
-        this.uniforms.widthsScaled.value[i] = widthScaledNew;
-        this.uniforms.heightsScaled.value[i] = heightScaledNew;
-      });
+    addLoadListener(texture, () => {
+      this.uniforms.isTextureLoaded.value = true;
+      this.saveDimensions();
     });
   }
 
   saveDimensions() {
-    const scaledDimensions = this.textures.map((tex, i) => computeScaledDimensions(tex, this.camera, this.textureScales[i], this.cover));
-    const widthsScaled = scaledDimensions.map(dimensions => dimensions[0]);
-    const heightsScaled = scaledDimensions.map(dimensions => dimensions[1]);
-    this.uniforms.widthsScaled.value = widthsScaled;
-    this.uniforms.heightsScaled.value = heightsScaled;
+    const [widthScaled, heightScaled] = computeScaledDimensions(this.texture, this.camera, this.textureScale, this.cover);
+    this.uniforms.widthScaled.value = widthScaled;
+    this.uniforms.heightScaled.value = heightScaled;
+  }
+
+  saveCameraMatrices() {
+    // make sure the camera matrices are updated
+    this.camera.updateProjectionMatrix();
+    this.camera.updateMatrixWorld();
+    this.camera.updateWorldMatrix(); // update the uniforms from the camera so they're
+    // fixed in the camera's position at the projection time
+
+    const viewMatrixCamera = this.camera.matrixWorldInverse;
+    const projectionMatrixCamera = this.camera.projectionMatrix;
+    const modelMatrixCamera = this.camera.matrixWorld;
+    this.uniforms.viewMatrixCamera.value.copy(viewMatrixCamera);
+    this.uniforms.projectionMatrixCamera.value.copy(projectionMatrixCamera);
+    this.uniforms.projPosition.value.copy(this.camera.position);
+    this.uniforms.projDirection.value.set(0, 0, 1).applyMatrix4(modelMatrixCamera); // tell the shader we've projected
+
+    this.uniforms.isTextureProjected.value = true;
+  }
+
+  project(mesh) {
+    if (!(Array.isArray(mesh.material) ? mesh.material.every(m => m.isProjectedMaterial) : mesh.material.isProjectedMaterial)) {
+      throw new Error(`The mesh material must be a ProjectedMaterial`);
+    }
+
+    if (!(Array.isArray(mesh.material) ? mesh.material.some(m => m === this) : mesh.material === this)) {
+      throw new Error(`The provided mesh doesn't have the same material as where project() has been called from`);
+    } // make sure the matrix is updated
+
+
+    mesh.updateMatrixWorld(); // we save the object model matrix so it's projected relative
+    // to that position, like a snapshot
+
+    this.uniforms.savedModelMatrix.value.copy(mesh.matrixWorld); // if the material is not the first, output just the texture
+
+    if (Array.isArray(mesh.material)) {
+      const materialIndex = mesh.material.indexOf(this);
+
+      if (materialIndex > 0) {
+        this.uniforms.backgroundOpacity.value = 0;
+      }
+    } // persist also the current camera position and matrices
+
+
+    this.saveCameraMatrices();
+  }
+
+  projectInstanceAt(index, instancedMesh, matrixWorld, {
+    forceCameraSave = false
+  } = {}) {
+    if (!instancedMesh.isInstancedMesh) {
+      throw new Error(`The provided mesh is not an InstancedMesh`);
+    }
+
+    if (!(Array.isArray(instancedMesh.material) ? instancedMesh.material.every(m => m.isProjectedMaterial) : instancedMesh.material.isProjectedMaterial)) {
+      throw new Error(`The InstancedMesh material must be a ProjectedMaterial`);
+    }
+
+    if (!(Array.isArray(instancedMesh.material) ? instancedMesh.material.some(m => m === this) : instancedMesh.material === this)) {
+      throw new Error(`The provided InstancedMeshhave't i samenclude thas e material where project() has been called from`);
+    }
+
+    if (!instancedMesh.geometry.isBufferGeometry) {
+      throw new Error(`The InstancedMesh geometry must be a BufferGeometry`);
+    }
+
+    if (!instancedMesh.geometry.attributes[`savedModelMatrix0`] || !instancedMesh.geometry.attributes[`savedModelMatrix1`] || !instancedMesh.geometry.attributes[`savedModelMatrix2`] || !instancedMesh.geometry.attributes[`savedModelMatrix3`]) {
+      throw new Error(`No allocated data found on the geometry, please call 'allocateProjectionData(geometry, instancesCount)'`);
+    }
+
+    instancedMesh.geometry.attributes[`savedModelMatrix0`].setXYZW(index, matrixWorld.elements[0], matrixWorld.elements[1], matrixWorld.elements[2], matrixWorld.elements[3]);
+    instancedMesh.geometry.attributes[`savedModelMatrix1`].setXYZW(index, matrixWorld.elements[4], matrixWorld.elements[5], matrixWorld.elements[6], matrixWorld.elements[7]);
+    instancedMesh.geometry.attributes[`savedModelMatrix2`].setXYZW(index, matrixWorld.elements[8], matrixWorld.elements[9], matrixWorld.elements[10], matrixWorld.elements[11]);
+    instancedMesh.geometry.attributes[`savedModelMatrix3`].setXYZW(index, matrixWorld.elements[12], matrixWorld.elements[13], matrixWorld.elements[14], matrixWorld.elements[15]); // if the material is not the first, output just the texture
+
+    if (Array.isArray(instancedMesh.material)) {
+      const materialIndex = instancedMesh.material.indexOf(this);
+
+      if (materialIndex > 0) {
+        this.uniforms.backgroundOpacity.value = 0;
+      }
+    } // persist the current camera position and matrices
+    // only if it's the first instance since most surely
+    // in all other instances the camera won't change
+
+
+    if (index === 0 || forceCameraSave) {
+      this.saveCameraMatrices();
+    }
   }
 
 } // get camera ratio from different types of cameras
@@ -530,108 +497,12 @@ function computeScaledDimensions(texture, camera, textureScale, cover) {
   return [widthScaled, heightScaled];
 }
 
-function saveCameraMatrices(mesh, {
-  textureIndex: i
-}) {
-  const {
-    material
-  } = mesh;
-  const {
-    camera
-  } = material; // make sure the camera matrices are updated
-
-  camera.updateProjectionMatrix();
-  camera.updateMatrixWorld();
-  camera.updateWorldMatrix(); // update the uniforms from the camera so they're
-  // fixed in the camera's position at the projection time
-
-  const viewMatrixCamera = camera.matrixWorldInverse;
-  const projectionMatrixCamera = camera.projectionMatrix;
-  const modelMatrixCamera = camera.matrixWorld;
-  material.uniforms.viewMatricesCamera.value[i].copy(viewMatrixCamera);
-  material.uniforms.projectionMatrixCamera.value.copy(projectionMatrixCamera);
-  material.uniforms.projPositions.value[i].copy(camera.position);
-  material.uniforms.projDirections.value[i].set(0, 0, 1).applyMatrix4(modelMatrixCamera); // tell the material we've projected
-
-  material.uniforms.isTextureProjected.value[i] = true; // add the i at the end of the array to make it sit on top
-
-  const projectedTexturesIndices = material.uniforms.projectedTexturesIndices.value;
-
-  if (projectedTexturesIndices.includes(i)) {
-    projectedTexturesIndices.splice(projectedTexturesIndices.indexOf(i), 1);
-  } else {
-    projectedTexturesIndices.shift();
-  }
-
-  projectedTexturesIndices.push(i);
-}
-
-function project(mesh, {
-  textureIndex: i = 0
-} = {}) {
-  if (!mesh.material.isProjectedMaterial) {
-    throw new Error(`The mesh material must be a ProjectedMaterial`);
-  }
-
-  if (i >= mesh.material.uniforms.projectedTextures.value.length) {
-    throw new Error(`The textureIndex is greater than the provided textures`);
-  } // make sure the matrix is updated
-
-
-  mesh.updateMatrixWorld(); // we save the object model matrix so it's projected relative
-  // to that position, like a snapshot
-
-  mesh.material.uniforms.savedModelMatrices.value[i].copy(mesh.matrixWorld); // persist also the current camera position and matrices
-
-  saveCameraMatrices(mesh, {
-    textureIndex: i
-  });
-}
-function projectInstanceAt(index, instancedMesh, matrixWorld, {
-  textureIndex: i = 0,
-  forceCameraSave = false
-} = {}) {
-  if (!instancedMesh.isInstancedMesh) {
-    throw new Error(`The provided mesh is not an InstancedMesh`);
-  }
-
-  if (!instancedMesh.material.isProjectedMaterial) {
-    throw new Error(`The InstancedMesh material must be a ProjectedMaterial`);
-  }
-
-  if (i >= instancedMesh.material.uniforms.projectedTextures.value.length) {
-    throw new Error(`The textureIndex is greater than the provided textures`);
-  }
-
-  if (!instancedMesh.geometry.isBufferGeometry) {
-    throw new Error(`The InstancedMesh geometry must be a BufferGeometry`);
-  }
-
-  if (!instancedMesh.geometry.attributes[`savedModelMatrix0_${i}`] || !instancedMesh.geometry.attributes[`savedModelMatrix1_${i}`] || !instancedMesh.geometry.attributes[`savedModelMatrix2_${i}`] || !instancedMesh.geometry.attributes[`savedModelMatrix3_${i}`]) {
-    throw new Error(`No allocated data found on the geometry, please call 'allocateProjectionData(geometry, instancesCount)'`);
-  }
-
-  instancedMesh.geometry.attributes[`savedModelMatrix0_${i}`].setXYZW(index, matrixWorld.elements[0], matrixWorld.elements[1], matrixWorld.elements[2], matrixWorld.elements[3]);
-  instancedMesh.geometry.attributes[`savedModelMatrix1_${i}`].setXYZW(index, matrixWorld.elements[4], matrixWorld.elements[5], matrixWorld.elements[6], matrixWorld.elements[7]);
-  instancedMesh.geometry.attributes[`savedModelMatrix2_${i}`].setXYZW(index, matrixWorld.elements[8], matrixWorld.elements[9], matrixWorld.elements[10], matrixWorld.elements[11]);
-  instancedMesh.geometry.attributes[`savedModelMatrix3_${i}`].setXYZW(index, matrixWorld.elements[12], matrixWorld.elements[13], matrixWorld.elements[14], matrixWorld.elements[15]); // persist the current camera position and matrices
-  // only if it's the first instance since most surely
-  // in all other instances the camera won't change
-
-  if (index === 0 || forceCameraSave) {
-    saveCameraMatrices(instancedMesh, {
-      textureIndex: i
-    });
-  }
-}
-function allocateProjectionData(geometry, instancesCount, texturesCount = 1) {
-  range(texturesCount).forEach(i => {
-    geometry.setAttribute(`savedModelMatrix0_${i}`, new InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
-    geometry.setAttribute(`savedModelMatrix1_${i}`, new InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
-    geometry.setAttribute(`savedModelMatrix2_${i}`, new InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
-    geometry.setAttribute(`savedModelMatrix3_${i}`, new InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
-  });
+function allocateProjectionData(geometry, instancesCount) {
+  geometry.setAttribute(`savedModelMatrix0`, new InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
+  geometry.setAttribute(`savedModelMatrix1`, new InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
+  geometry.setAttribute(`savedModelMatrix2`, new InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
+  geometry.setAttribute(`savedModelMatrix3`, new InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
 }
 
 export default ProjectedMaterial;
-export { allocateProjectionData, project, projectInstanceAt };
+export { allocateProjectionData };

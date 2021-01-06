@@ -23,7 +23,7 @@
     <script type="module">
       import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial, { project } from './lib/ProjectedMaterial.module.js'
+      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
       import { random } from './lib/math-utils.js'
 
       // grab our canvas
@@ -59,7 +59,8 @@
           random(0.1, 0.5),
           random(0.1, 0.5)
         )
-
+        // create a different material for different objects
+        // since each one will have a different position
         const material = new ProjectedMaterial({
           // use the orthographic camera
           camera: webgl.camera,
@@ -75,7 +76,7 @@
         element.position.z = random(-1, 1)
 
         // and when you're ready project the texture!
-        project(element)
+        material.project(element)
 
         elements.add(element)
       }
