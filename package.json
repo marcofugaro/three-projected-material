@@ -1,7 +1,7 @@
 {
   "name": "three-projected-material",
   "description": "Materail which projects a texture onto an object",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "main": "build/ProjectedMaterial.js",
   "module": "build/ProjectedMaterial.module.js",
   "repository": "git@github.com:marcofugaro/three-projected-material.git",
@@ -31,4 +31,3 @@
     "three": "0.124.0"
   }
 }
-
