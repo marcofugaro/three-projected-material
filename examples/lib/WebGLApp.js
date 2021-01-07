@@ -1,22 +1,39 @@
 // Taken from https://github.com/marcofugaro/threejs-modern-app/blob/master/src/lib/WebGLApp.js
-import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
-import { OrbitControls } from 'https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js'
-import Stats from 'https://unpkg.com/three@0.122.0/examples/jsm/libs/stats.module.js'
-import State from './controls-state.module.js'
-import wrapGUI from './controls-gui.module.js'
+import * as THREE from 'https://unpkg.com/three@0.124.0/build/three.module.js'
+import { OrbitControls } from 'https://unpkg.com/three@0.124.0/examples/jsm/controls/OrbitControls.js'
+import Stats from 'https://unpkg.com/three@0.124.0/examples/jsm/libs/stats.module.js'
+// import CCapture from 'https://unpkg.com/ccapture.js@1.1.0/build/CCapture.all.min.js'
+import { initControls } from './Controls.js'
 
 export default class WebGLApp {
-  #updateListeners = []
-  #pointerdownListeners = []
-  #pointermoveListeners = []
-  #pointerupListeners = []
-  #rafID
-  #lastTime
-  #startX
-  #startY
+  _width
+  _height
+  _capturer
+  isRunning = false
+  time = 0
+  dt = 0
+  _lastTime = performance.now()
+  _updateListeners = []
+  _pointerdownListeners = []
+  _pointermoveListeners = []
+  _pointerupListeners = []
+  _startX
+  _startY
+
+  get background() {
+    return this.renderer.getClearColor(new THREE.Color())
+  }
+
+  get backgroundAlpha() {
+    return this.renderer.getClearAlpha()
+  }
+
+  get isRecording() {
+    return Boolean(this._capturer)
+  }
 
   constructor({
-    background = '#000',
+    background = '#111',
     backgroundAlpha = 1,
     fov = 45,
     frustumSize = 3,
@@ -24,55 +41,59 @@ export default class WebGLApp {
     far = 100,
     ...options
   } = {}) {
-    this.background = background
-    this.backgroundAlpha = backgroundAlpha
-
     this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: false,
+      antialias: !options.postprocessing,
+      alpha: backgroundAlpha !== 1,
       failIfMajorPerformanceCaveat: true,
+      // enabled for recording gifs or videos,
+      // might disable it for performance reasons
+      preserveDrawingBuffer: true,
       ...options,
     })
-
-    if (options.outputEncoding) {
-      this.renderer.outputEncoding = options.outputEncoding
+    if (options.sortObjects !== undefined) {
+      this.renderer.sortObjects = options.sortObjects
+    }
+    if (options.gamma) {
+      this.renderer.outputEncoding = THREE.sRGBEncoding
+    }
+    if (options.xr) {
+      this.renderer.xr.enabled = true
     }
 
-    this.renderer.sortObjects = false
     this.canvas = this.renderer.domElement
 
     this.renderer.setClearColor(background, backgroundAlpha)
 
+    // save the fixed dimensions
+    this._width = options.width
+    this._height = options.height
+
     // clamp pixel ratio for performance
     this.maxPixelRatio = options.maxPixelRatio || 2
-    // clamp delta to stepping anything too far forward
+    // clamp delta to avoid stepping anything too far forward
     this.maxDeltaTime = options.maxDeltaTime || 1 / 30
 
-    // setup a basic camera
+    // setup the camera
+    const aspect = this._width / this._height
     if (!options.orthographic) {
-      this.camera = new THREE.PerspectiveCamera(fov, 1, near, far)
+      this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far)
     } else {
-      const aspect = window.innerWidth / window.innerHeight
       this.camera = new THREE.OrthographicCamera(
         -(frustumSize * aspect) / 2,
         (frustumSize * aspect) / 2,
         frustumSize / 2,
         -frustumSize / 2,
-        0.01,
-        100
+        near,
+        far
       )
       this.camera.frustumSize = frustumSize
     }
     this.camera.position.copy(options.cameraPosition || new THREE.Vector3(0, 0, 4))
     this.camera.lookAt(0, 0, 0)
+
     this.scene = new THREE.Scene()
 
     this.gl = this.renderer.getContext()
-
-    this.time = 0
-    this.isRunning = false
-    this.#lastTime = performance.now()
-    this.#rafID = null
 
     // handle resize events
     window.addEventListener('resize', this.resize)
@@ -92,8 +113,8 @@ export default class WebGLApp {
     this.canvas.addEventListener('pointerdown', (event) => {
       if (!event.isPrimary) return
       this.isDragging = true
-      this.#startX = event.offsetX
-      this.#startY = event.offsetY
+      this._startX = event.offsetX
+      this._startY = event.offsetY
       // call onPointerDown method
       this.scene.traverse((child) => {
         if (typeof child.onPointerDown === 'function') {
@@ -101,60 +122,48 @@ export default class WebGLApp {
         }
       })
       // call the pointerdown listeners
-      this.#pointerdownListeners.forEach((fn) => fn(event, { x: event.offsetX, y: event.offsetY }))
+      this._pointerdownListeners.forEach((fn) => fn(event, { x: event.offsetX, y: event.offsetY }))
     })
     this.canvas.addEventListener('pointermove', (event) => {
       if (!event.isPrimary) return
       // call onPointerMove method
+      const position = {
+        x: event.offsetX,
+        y: event.offsetY,
+        ...(this._startX !== undefined && { dragX: event.offsetX - this._startX }),
+        ...(this._startY !== undefined && { dragY: event.offsetY - this._startY }),
+      }
       this.scene.traverse((child) => {
         if (typeof child.onPointerMove === 'function') {
-          child.onPointerMove(event, {
-            x: event.offsetX,
-            y: event.offsetY,
-            dragX: event.offsetX - this.#startX,
-            dragY: event.offsetY - this.#startY,
-          })
+          child.onPointerMove(event, position)
         }
       })
       // call the pointermove listeners
-      this.#pointermoveListeners.forEach((fn) =>
-        fn(event, {
-          x: event.offsetX,
-          y: event.offsetY,
-          dragX: event.offsetX - this.#startX,
-          dragY: event.offsetY - this.#startY,
-        })
-      )
+      this._pointermoveListeners.forEach((fn) => fn(event, position))
     })
     this.canvas.addEventListener('pointerup', (event) => {
       if (!event.isPrimary) return
       this.isDragging = false
       // call onPointerUp method
+      const position = {
+        x: event.offsetX,
+        y: event.offsetY,
+        ...(this._startX !== undefined && { dragX: event.offsetX - this._startX }),
+        ...(this._startY !== undefined && { dragY: event.offsetY - this._startY }),
+      }
       this.scene.traverse((child) => {
         if (typeof child.onPointerUp === 'function') {
-          child.onPointerUp(event, {
-            x: event.offsetX,
-            y: event.offsetY,
-            dragX: event.offsetX - this.#startX,
-            dragY: event.offsetY - this.#startY,
-          })
+          child.onPointerUp(event, position)
         }
       })
       // call the pointerup listeners
-      this.#pointerupListeners.forEach((fn) =>
-        fn(event, {
-          x: event.offsetX,
-          y: event.offsetY,
-          dragX: event.offsetX - this.#startX,
-          dragY: event.offsetY - this.#startY,
-        })
-      )
+      this._pointerupListeners.forEach((fn) => fn(event, position))
 
-      this.#startX = undefined
-      this.#startY = undefined
+      this._startX = undefined
+      this._startY = undefined
     })
 
-    // set up a simple orbit controller
+    // set up OrbitControls
     if (options.orbitControls) {
       this.orbitControls = new OrbitControls(this.camera, this.canvas)
 
@@ -178,41 +187,23 @@ export default class WebGLApp {
 
     // initialize the controls-state
     if (options.controls) {
-      const controlsState = State(options.controls)
-      this.controls = options.hideControls
-        ? controlsState
-        : wrapGUI(controlsState, { expanded: !options.closeControls })
-
-      // add the custom controls-gui styles
-      if (!options.hideControls) {
-        const styles = `
-          [class^="controlPanel-"] [class*="__field"]::before {
-            content: initial !important;
-          }
-          [class^="controlPanel-"] [class*="__labelText"] {
-            text-indent: 6px !important;
-          }
-          [class^="controlPanel-"] [class*="__field--button"] > button::before {
-            content: initial !important;
-          }
-        `
-        const style = document.createElement('style')
-        style.type = 'text/css'
-        style.innerHTML = styles
-        document.head.appendChild(style)
-      }
+      this.controls = initControls(options.controls, options)
     }
   }
 
-  resize = ({
-    width = window.innerWidth,
-    height = window.innerHeight,
-    pixelRatio = Math.min(this.maxPixelRatio, window.devicePixelRatio),
-  } = {}) => {
-    this.width = width
-    this.height = height
-    this.pixelRatio = pixelRatio
+  get width() {
+    return this._width || window.innerWidth
+  }
 
+  get height() {
+    return this._height || window.innerHeight
+  }
+
+  get pixelRatio() {
+    return Math.min(this.maxPixelRatio, window.devicePixelRatio)
+  }
+
+  resize = ({ width = this.width, height = this.height, pixelRatio = this.pixelRatio } = {}) => {
     // update pixel ratio if necessary
     if (this.renderer.getPixelRatio() !== pixelRatio) {
       this.renderer.setPixelRatio(pixelRatio)
@@ -231,6 +222,12 @@ export default class WebGLApp {
     }
     this.camera.updateProjectionMatrix()
 
+    // resize also the composer, width and height
+    // are automatically extracted from the renderer
+    if (this.composer) {
+      this.composer.setSize()
+    }
+
     // recursively tell all child objects to resize
     this.scene.traverse((obj) => {
       if (typeof obj.resize === 'function') {
@@ -247,125 +244,189 @@ export default class WebGLApp {
     return this
   }
 
-  update = (dt, time) => {
+  // start recording of a gif or a video
+  startRecording = ({
+    width = 1920,
+    height = 1080,
+    fileName = 'Recording',
+    format = 'gif',
+    ...options
+  } = {}) => {
+    if (this._capturer) {
+      return
+    }
+
+    // force a specific output size
+    this.resize({ width, height, pixelRatio: 1 })
+    this.draw()
+
+    this._capturer = new CCapture({
+      format,
+      name: fileName,
+      workersPath: '',
+      motionBlurFrames: 2,
+      ...options,
+    })
+    this._capturer.start()
+  }
+
+  stopRecording = () => {
+    if (!this._capturer) {
+      return
+    }
+
+    this._capturer.stop()
+    this._capturer.save()
+    this._capturer = undefined
+
+    // reset to default size
+    this.resize()
+    this.draw()
+  }
+
+  update = (dt, time, xrframe) => {
     if (this.orbitControls) {
       this.orbitControls.update()
     }
 
     // recursively tell all child objects to update
     this.scene.traverse((obj) => {
-      if (typeof obj.update === 'function') {
-        obj.update(dt, time)
+      if (typeof obj.update === 'function' && !obj.isTransformControls) {
+        obj.update(dt, time, xrframe)
       }
     })
 
+    if (this.world) {
+      // update the cannon-es physics engine
+      this.world.step(1 / 60, dt)
+
+      // update the debug wireframe renderer
+      if (this.cannonDebugger) {
+        this.cannonDebugger.update()
+      }
+
+      // recursively tell all child bodies to update
+      this.world.bodies.forEach((body) => {
+        if (typeof body.update === 'function') {
+          body.update(dt, time)
+        }
+      })
+    }
+
     // call the update listeners
-    this.#updateListeners.forEach((fn) => fn(dt, time))
+    this._updateListeners.forEach((fn) => fn(dt, time, xrframe))
 
     return this
   }
 
   onUpdate(fn) {
-    this.#updateListeners.push(fn)
+    this._updateListeners.push(fn)
   }
 
   onPointerDown(fn) {
-    this.#pointerdownListeners.push(fn)
+    this._pointerdownListeners.push(fn)
   }
 
   onPointerMove(fn) {
-    this.#pointermoveListeners.push(fn)
+    this._pointermoveListeners.push(fn)
   }
 
   onPointerUp(fn) {
-    this.#pointerupListeners.push(fn)
+    this._pointerupListeners.push(fn)
   }
 
   offUpdate(fn) {
-    const index = this.#updateListeners.indexOf(fn)
+    const index = this._updateListeners.indexOf(fn)
 
     // return silently if the function can't be found
     if (index === -1) {
       return
     }
 
-    this.#updateListeners.splice(index, 1)
+    this._updateListeners.splice(index, 1)
   }
 
   offPointerDown(fn) {
-    const index = this.#pointerdownListeners.indexOf(fn)
+    const index = this._pointerdownListeners.indexOf(fn)
 
     // return silently if the function can't be found
     if (index === -1) {
       return
     }
 
-    this.#pointerdownListeners.splice(index, 1)
+    this._pointerdownListeners.splice(index, 1)
   }
 
   offPointerMove(fn) {
-    const index = this.#pointermoveListeners.indexOf(fn)
+    const index = this._pointermoveListeners.indexOf(fn)
 
     // return silently if the function can't be found
     if (index === -1) {
       return
     }
 
-    this.#pointermoveListeners.splice(index, 1)
+    this._pointermoveListeners.splice(index, 1)
   }
 
   offPointerUp(fn) {
-    const index = this.#pointerupListeners.indexOf(fn)
+    const index = this._pointerupListeners.indexOf(fn)
 
     // return silently if the function can't be found
     if (index === -1) {
       return
     }
 
-    this.#pointerupListeners.splice(index, 1)
+    this._pointerupListeners.splice(index, 1)
   }
 
   draw = () => {
-    this.renderer.render(this.scene, this.camera)
+    if (this.composer) {
+      this.composer.render(this.dt)
+    } else {
+      this.renderer.render(this.scene, this.camera)
+    }
     return this
   }
 
   start = () => {
-    if (this.#rafID !== null) return
-    this.#rafID = window.requestAnimationFrame(this.animate)
+    if (this.isRunning) return
+    this.renderer.setAnimationLoop(this.animate)
     this.isRunning = true
     return this
   }
 
   stop = () => {
-    if (this.#rafID === null) return
-    window.cancelAnimationFrame(this.#rafID)
-    this.#rafID = null
+    if (!this.isRunning) return
+    this.renderer.setAnimationLoop(null)
     this.isRunning = false
     return this
   }
 
-  animate = () => {
+  animate = (now, xrframe) => {
     if (!this.isRunning) return
-    window.requestAnimationFrame(this.animate)
 
     if (this.stats) this.stats.begin()
 
-    const now = performance.now()
-    const dt = Math.min(this.maxDeltaTime, (now - this.#lastTime) / 1000)
-    this.time += dt
-    this.#lastTime = now
-    this.update(dt, this.time)
+    this.dt = Math.min(this.maxDeltaTime, (now - this._lastTime) / 1000)
+    this.time += this.dt
+    this._lastTime = now
+    this.update(this.dt, this.time, xrframe)
     this.draw()
+
+    if (this._capturer) this._capturer.capture(this.canvas)
 
     if (this.stats) this.stats.end()
   }
 
-  traverse = (fn, ...args) => {
-    this.scene.traverse((child) => {
-      if (typeof child[fn] === 'function') {
-        child[fn].apply(child, args)
-      }
-    })
+  get cursor() {
+    return this.canvas.style.cursor
+  }
+
+  set cursor(cursor) {
+    if (cursor) {
+      this.canvas.style.cursor = cursor
+    } else {
+      this.canvas.style.cursor = null
+    }
   }
 }

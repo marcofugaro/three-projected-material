@@ -21,7 +21,7 @@
     </p>
 
     <script type="module">
-      import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
+      import * as THREE from 'https://unpkg.com/three@0.124.0/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
       import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
       import { random } from './lib/math-utils.js'
@@ -64,7 +64,7 @@
         const material = new ProjectedMaterial({
           // use the orthographic camera
           camera: webgl.camera,
-          texture: texture,
+          texture,
           color: '#1c1c1c',
           textureScale: 0.8,
         })

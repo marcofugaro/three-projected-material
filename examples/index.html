@@ -47,24 +47,14 @@
 
       .cover {
         color: white;
+        position: relative;
         text-align: center;
         line-height: 1.5;
-        padding: 6rem 2rem;
-        background: linear-gradient(-45deg, var(--primary), var(--accent));
-        background-size: 200% 200%;
-        animation: animated-gradient 7s ease infinite;
-      }
-
-      @keyframes animated-gradient {
-        0% {
-          background-position: 0% 50%;
-        }
-        50% {
-          background-position: 100% 50%;
-        }
-        100% {
-          background-position: 0% 50%;
-        }
+        padding-top: 22rem;
+        padding-left: 2rem;
+        padding-right: 2rem;
+        padding-bottom: 4rem;
+        background: radial-gradient(#353535, #222 80%);
       }
 
       .cover h1 {
@@ -87,7 +77,8 @@
 
       @media (max-width: 44rem) {
         .cover {
-          padding: 2rem 1rem;
+          padding-left: 1rem;
+          padding-right: 1rem;
         }
         .container {
           padding: 0 1rem 2rem;
@@ -122,6 +113,20 @@
         display: block;
         width: 100%;
         height: auto;
+      }
+
+      /* show the canvas instead */
+      .cover h1 {
+        display: none;
+        pointer-events: none;
+      }
+
+      #cover-canvas {
+        position: absolute;
+        top: 2rem;
+        left: 0;
+        outline: none;
+        pointer-events: none;
       }
     </style>
     <script type="module">
@@ -172,9 +177,140 @@
         return string.charAt(0).toUpperCase() + string.slice(1)
       }
     </script>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.124.0/build/three.module.js'
+      import { RoundedBoxBufferGeometry } from 'https://unpkg.com/three@0.124.0/examples/jsm/geometries/RoundedBoxBufferGeometry.js'
+      import * as eases from 'https://unpkg.com/eases-jsnext@1.0.10/dist/eases.es.js'
+      import WebGLApp from './lib/WebGLApp.js'
+      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
+
+      function clamp01(value) {
+        return Math.min(Math.max(value, 0), 1)
+      }
+
+      // grab our canvas
+      const canvas = document.querySelector('#cover-canvas')
+
+      // WebGLApp is a really basic wrapper around the three.js setup,
+      // it hides all unnecessary stuff not related to this example
+      const webgl = new WebGLApp({
+        canvas,
+        // set the scene background alpha
+        backgroundAlpha: 0,
+        // give it aa fixed height
+        height: 350,
+      })
+
+      // attach it to the window to inspect in the console
+      window.webgl = webgl
+
+      const size = 1.8
+      const geometry = new RoundedBoxBufferGeometry(size, size, size, 3, 0.04)
+
+      // load the textures
+      const textures = [
+        new THREE.TextureLoader().load('./images/three-projected-material-1.png'),
+        new THREE.TextureLoader().load('./images/three-projected-material-2.png'),
+        new THREE.TextureLoader().load('./images/three-projected-material-3.png'),
+        new THREE.TextureLoader().load('./images/three-projected-material-4.png'),
+        new THREE.TextureLoader().load('./images/three-projected-material-5.png'),
+        new THREE.TextureLoader().load('./images/three-projected-material-6.png'),
+      ]
+
+      // https://threejs.org/examples/#webgl_materials_texture_anisotropy
+      textures.forEach((texture) => {
+        texture.anisotropy = webgl.renderer.capabilities.getMaxAnisotropy()
+      })
+
+      // make an array of materials with the same texture
+      const materials = []
+      for (let i = 0; i < textures.length; i++) {
+        const material = new ProjectedMaterial({
+          camera: webgl.camera,
+          texture: textures[i],
+          color: 'ghostwhite',
+          textureScale: 0.65,
+          transparent: true, // needed for multiple materials
+          roughness: 0.1,
+          clearcoat: 1,
+        })
+
+        materials.push(material)
+
+        // reserve a group for the material on the geometry
+        // https://stackoverflow.com/a/49708915
+        geometry.addGroup(0, Infinity, i)
+      }
+
+      // create the mesh with the projected materials
+      const mesh = new THREE.Mesh(geometry, materials)
+      webgl.scene.add(mesh)
+
+      const rotations = [
+        (m) => m.rotateY(-Math.PI / 2),
+        (m) => m.rotateZ(Math.PI / 2),
+        (m) => m.rotateZ(Math.PI / 2),
+        (m) => m.rotateY(Math.PI / 2),
+        (m) => m.rotateX(-Math.PI / 2),
+        (m) => m.rotateX(-Math.PI / 2),
+      ]
+
+      // project the textures
+      rotations.forEach((rotate, i) => {
+        rotate(mesh)
+        mesh.material[i].project(mesh)
+      })
+
+      // reset the rotation
+      mesh.quaternion.identity()
+
+      // animate the cube
+      const INTERVAL_TIME = 3 // seconds
+      const ANIMATION_TIME = 2.5 // seconds
+      const targetMesh = new THREE.Object3D()
+      let counter = 0
+      const startQuaternion = new THREE.Quaternion()
+      let startTime = webgl.time
+      rotations[counter](targetMesh)
+      counter++
+      setInterval(() => {
+        startQuaternion.copy(targetMesh.quaternion)
+        rotations[counter](targetMesh)
+        counter = (counter + 1) % rotations.length
+        startTime = webgl.time
+      }, INTERVAL_TIME * 1000)
+
+      webgl.onUpdate((dt, time) => {
+        const t = clamp01((time - startTime) / ANIMATION_TIME)
+        mesh.quaternion.copy(startQuaternion).slerp(targetMesh.quaternion, eases.elasticOut(t))
+      })
+
+      // add lights
+      const spotLight = new THREE.SpotLight(0xffffff, 4, 40, Math.PI / 4, 1)
+      spotLight.position.set(20, 20, 15)
+      spotLight.lookAt(0, 0, 0)
+      webgl.scene.add(spotLight)
+
+      const spotLight2 = new THREE.SpotLight(0xffffff, 4, 40, Math.PI / 4, 1)
+      spotLight2.position.set(-10, -3, -3)
+      spotLight2.lookAt(0, 0, 0)
+      webgl.scene.add(spotLight2)
+
+      // const spotLight3 = new THREE.SpotLight(0xffffff, 0.3, 40, Math.PI / 4, 1)
+      // spotLight3.position.set(5, -5, 5)
+      // spotLight3.lookAt(0, 0, size / 2)
+      // webgl.scene.add(spotLight3)
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
+      webgl.scene.add(ambientLight)
+
+      // start animation loop
+      webgl.start()
+    </script>
   </head>
   <body>
     <div class="cover">
+      <canvas id="cover-canvas"></canvas>
       <h1>three-projected-material</h1>
       <p>
         Three.js Material which lets you do

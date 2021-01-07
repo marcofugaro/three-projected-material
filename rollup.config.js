@@ -56,7 +56,7 @@ export default [
       file: 'examples/lib/ProjectedMaterial.module.js',
       plugins: [
         replace({
-          three: 'https://unpkg.com/three@0.122.0/build/three.module.js',
+          three: 'https://unpkg.com/three@0.124.0/build/three.module.js',
         }),
       ],
     },

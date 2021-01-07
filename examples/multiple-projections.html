@@ -24,7 +24,7 @@
     </p>
 
     <script type="module">
-      import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
+      import * as THREE from 'https://unpkg.com/three@0.124.0/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
       import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
       import { loadGltf, extractGeometry } from './lib/three-utils.js'
@@ -63,7 +63,7 @@
         for (let i = 0; i < 10; i++) {
           const material = new ProjectedMaterial({
             camera: webgl.camera,
-            texture: texture,
+            texture,
             color: '#fff',
             textureScale: 0.8,
             // needed for multiple materials

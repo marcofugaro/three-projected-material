@@ -1,4 +1,4 @@
-import { LogLuvEncoding, GammaEncoding, RGBDEncoding, RGBM16Encoding, RGBM7Encoding, RGBEEncoding, sRGBEncoding, LinearEncoding, MeshPhysicalMaterial, Vector2, Matrix4, Vector3, InstancedBufferAttribute } from 'https://unpkg.com/three@0.122.0/build/three.module.js';
+import { LogLuvEncoding, GammaEncoding, RGBDEncoding, RGBM16Encoding, RGBM7Encoding, RGBEEncoding, sRGBEncoding, LinearEncoding, MeshPhysicalMaterial, Vector2, Matrix4, Vector3, InstancedBufferAttribute } from 'https://unpkg.com/three@0.124.0/build/three.module.js';
 
 var id = 0;
 
@@ -51,7 +51,7 @@ function addLoadListener(texture, callback) {
       return callback(texture);
     }
   }, 16);
-} // https://github.com/mrdoob/https://unpkg.com/three@0.122.0/build/three.module.js.js/blob/3c60484ce033e0dc2d434ce0eb89fc1f59d57d65/src/renderers/webgl/WebGLProgram.js#L22-L48s
+} // https://github.com/mrdoob/https://unpkg.com/three@0.124.0/build/three.module.js.js/blob/3c60484ce033e0dc2d434ce0eb89fc1f59d57d65/src/renderers/webgl/WebGLProgram.js#L22-L48s
 
 function getEncodingComponents(encoding) {
   switch (encoding) {
@@ -83,7 +83,7 @@ function getEncodingComponents(encoding) {
       console.warn('THREE.WebGLProgram: Unsupported encoding:', encoding);
       return ['Linear', '( value )'];
   }
-} // https://github.com/mrdoob/https://unpkg.com/three@0.122.0/build/three.module.js.js/blob/3c60484ce033e0dc2d434ce0eb89fc1f59d57d65/src/renderers/webgl/WebGLProgram.js#L66-L71
+} // https://github.com/mrdoob/https://unpkg.com/three@0.124.0/build/three.module.js.js/blob/3c60484ce033e0dc2d434ce0eb89fc1f59d57d65/src/renderers/webgl/WebGLProgram.js#L66-L71
 
 function getTexelDecodingFunction(functionName, encoding) {
   const components = getEncodingComponents(encoding);
