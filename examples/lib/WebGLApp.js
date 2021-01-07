@@ -44,7 +44,6 @@ export default class WebGLApp {
     this.renderer = new THREE.WebGLRenderer({
       antialias: !options.postprocessing,
       alpha: backgroundAlpha !== 1,
-      // failIfMajorPerformanceCaveat: true,
       // enabled for recording gifs or videos,
       // might disable it for performance reasons
       preserveDrawingBuffer: true,
