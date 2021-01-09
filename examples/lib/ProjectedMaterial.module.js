@@ -233,18 +233,18 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
           uniform mat4 projectionMatrixCamera;
 
           #ifdef USE_INSTANCING
-          in vec4 savedModelMatrix0;
-          in vec4 savedModelMatrix1;
-          in vec4 savedModelMatrix2;
-          in vec4 savedModelMatrix3;
+          attribute vec4 savedModelMatrix0;
+          attribute vec4 savedModelMatrix1;
+          attribute vec4 savedModelMatrix2;
+          attribute vec4 savedModelMatrix3;
           #else
           uniform mat4 savedModelMatrix;
           #endif
 
-          out vec3 vSavedNormal;
-          out vec4 vTexCoords;
+          varying vec3 vSavedNormal;
+          varying vec4 vTexCoords;
           #ifndef ORTHOGRAPHIC
-          out vec4 vWorldPosition;
+          varying vec4 vWorldPosition;
           #endif
         `,
         main:
@@ -280,10 +280,10 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
           uniform float heightScaled;
           uniform vec2 textureOffset;
 
-          in vec3 vSavedNormal;
-          in vec4 vTexCoords;
+          varying vec3 vSavedNormal;
+          varying vec4 vTexCoords;
           #ifndef ORTHOGRAPHIC
-          in vec4 vWorldPosition;
+          varying vec4 vWorldPosition;
           #endif
 
           ${projectedTexelToLinear}
@@ -319,7 +319,7 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
           vec4 diffuseColor = vec4(diffuse, opacity * backgroundOpacity);
 
           if (isFacingProjector && isInTexture && isTextureLoaded && isTextureProjected) {
-            vec4 textureColor = texture(projectedTexture, uv);
+            vec4 textureColor = texture2D(projectedTexture, uv);
 
             // apply the enccoding from the texture
             textureColor = projectedTexelToLinear(textureColor);
