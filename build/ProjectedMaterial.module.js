@@ -41,12 +41,12 @@ function monkeyPatch(shader, {
 
 function addLoadListener(texture, callback) {
   // return if it's already loaded
-  if (texture.image) {
+  if (texture.image && texture.image.videoWidth !== 0 && texture.image.videoHeight !== 0) {
     return;
   }
 
   const interval = setInterval(() => {
-    if (texture.image) {
+    if (texture.image && texture.image.videoWidth !== 0 && texture.image.videoHeight !== 0) {
       clearInterval(interval);
       return callback(texture);
     }
@@ -482,9 +482,16 @@ function computeScaledDimensions(texture, camera, textureScale, cover) {
   // return some default values if the image hasn't loaded yet
   if (!texture.image) {
     return [1, 1];
+  } // return if it's a video and if the video hasn't loaded yet
+
+
+  if (texture.image.videoWidth === 0 && texture.image.videoHeight === 0) {
+    return [1, 1];
   }
 
-  const ratio = texture.image.naturalWidth / texture.image.naturalHeight;
+  const sourceWidth = texture.image.naturalWidth || texture.image.videoWidth;
+  const sourceHeight = texture.image.naturalHeight || texture.image.videoHeight;
+  const ratio = sourceWidth / sourceHeight;
   const ratioCamera = getCameraRatio(camera);
   const widthCamera = 1;
   const heightCamera = widthCamera * (1 / ratioCamera);
