@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { monkeyPatch, addLoadListener, getTexelDecodingFunction, someChild } from './three-utils'
+import { monkeyPatch, addLoadListener, getTexelDecodingFunction } from './three-utils'
 
 export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   #cover
@@ -263,28 +263,19 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   }
 
   project(mesh) {
-    const someChildIsProjectedMaterial = someChild(
-      mesh,
-      (child) =>
-        child.material &&
-        (Array.isArray(child.material)
-          ? child.material.every((m) => m.isProjectedMaterial)
-          : child.material.isProjectedMaterial)
-    )
-
-    if (!someChildIsProjectedMaterial) {
+    if (
+      !(Array.isArray(mesh.material)
+        ? mesh.material.every((m) => m.isProjectedMaterial)
+        : mesh.material.isProjectedMaterial)
+    ) {
       throw new Error(`The mesh material must be a ProjectedMaterial`)
     }
 
-    const someChildIsInstance = someChild(
-      mesh,
-      (child) =>
-        child.material &&
-        (Array.isArray(child.material)
-          ? child.material.some((m) => m === this)
-          : child.material === this)
-    )
-    if (!someChildIsInstance) {
+    if (
+      !(Array.isArray(mesh.material)
+        ? mesh.material.some((m) => m === this)
+        : mesh.material === this)
+    ) {
       throw new Error(
         `The provided mesh doesn't have the same material as where project() has been called from`
       )
@@ -315,47 +306,38 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   }
 
   projectInstanceAt(index, instancedMesh, matrixWorld, { forceCameraSave = false } = {}) {
-    const someChildInstanced = someChild(instancedMesh, (child) => child.isInstancedMesh)
-    if (!someChildInstanced) {
+    if (!instancedMesh.isInstancedMesh) {
       throw new Error(`The provided mesh is not an InstancedMesh`)
     }
 
-    const someChildIsProjectedMaterial = someChild(
-      instancedMesh,
-      (child) =>
-        child.material &&
-        (Array.isArray(child.material)
-          ? child.material.every((m) => m.isProjectedMaterial)
-          : child.material.isProjectedMaterial)
-    )
-    if (!someChildIsProjectedMaterial) {
+    if (
+      !(Array.isArray(instancedMesh.material)
+        ? instancedMesh.material.every((m) => m.isProjectedMaterial)
+        : instancedMesh.material.isProjectedMaterial)
+    ) {
       throw new Error(`The InstancedMesh material must be a ProjectedMaterial`)
     }
 
-    const someChildIsInstance = someChild(
-      instancedMesh,
-      (child) =>
-        child.material &&
-        (Array.isArray(child.material)
-          ? child.material.some((m) => m === this)
-          : child.material === this)
-    )
-    if (!someChildIsInstance) {
+    if (
+      !(Array.isArray(instancedMesh.material)
+        ? instancedMesh.material.some((m) => m === this)
+        : instancedMesh.material === this)
+    ) {
       throw new Error(
         `The provided InstancedMeshhave't i samenclude thas e material where project() has been called from`
       )
     }
 
-    const someChildHasAttributes = someChild(
-      instancedMesh,
-      (child) =>
-        child.geometry &&
-        child.geometry.attributes[`savedModelMatrix0`] &&
-        child.geometry.attributes[`savedModelMatrix1`] &&
-        child.geometry.attributes[`savedModelMatrix2`] &&
-        child.geometry.attributes[`savedModelMatrix3`]
-    )
-    if (!someChildHasAttributes) {
+    if (!instancedMesh.geometry.isBufferGeometry) {
+      throw new Error(`The InstancedMesh geometry must be a BufferGeometry`)
+    }
+
+    if (
+      !instancedMesh.geometry.attributes[`savedModelMatrix0`] ||
+      !instancedMesh.geometry.attributes[`savedModelMatrix1`] ||
+      !instancedMesh.geometry.attributes[`savedModelMatrix2`] ||
+      !instancedMesh.geometry.attributes[`savedModelMatrix3`]
+    ) {
       throw new Error(
         `No allocated data found on the geometry, please call 'allocateProjectionData(geometry, instancesCount)'`
       )

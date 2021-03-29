@@ -76,15 +76,3 @@ export function getTexelDecodingFunction(functionName, encoding) {
     }
   `
 }
-
-// Array.prototype.some but for the scene graph
-export function someChild(object3d, conditionCheck) {
-  let some = false
-  object3d.traverse((child) => {
-    if (conditionCheck(child)) {
-      some = true
-    }
-  })
-
-  return some
-}
