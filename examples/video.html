@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video example - three-projected-material</title>
+    <link rel="stylesheet" href="css/style.css" type="text/css" />
+  </head>
+  <body>
+    <canvas id="app"></canvas>
+    <a
+      class="source-fab"
+      target="_blank"
+      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/video.html"
+      title="View source code on GitHub"
+    >
+      <img src="images/source.svg" />
+    </a>
+
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.124.0/build/three.module.js'
+      import WebGLApp from './lib/WebGLApp.js'
+      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
+      import { loadGltf } from './lib/three-utils.js'
+
+      // grab our canvas
+      const canvas = document.querySelector('#app')
+
+      // WebGLApp is a really basic wrapper around the three.js setup,
+      // it hides all unnecessary stuff not related to this example
+      const webgl = new WebGLApp({
+        canvas,
+        // set the scene background color
+        background: '#000',
+        // show the fps counter from stats.js
+        showFps: true,
+        // enable orbit controls
+        orbitControls: {
+          maxPolarAngle: Math.PI * 0.54,
+          target: new THREE.Vector3(0, 0.4, 0.1),
+        },
+        // move the camera a bit initially
+        cameraPosition: new THREE.Vector3(-0.9, 0.9, 2.2),
+        // add the controls-state pane
+        controls: {
+          showProjector: false,
+        },
+        // enable gamma
+        gamma: true,
+      })
+
+      // attach it to the window to inspect in the console
+      window.webgl = webgl
+
+      init()
+
+      async function init() {
+        // create a video element and play it
+        const video = document.createElement('video')
+        video.src = './images/bigbucksbunny.mp4'
+        video.muted = true
+        video.loop = true
+        video.play()
+
+        // create the VideoTexture and enable gamma correction for it
+        const texture = new THREE.VideoTexture(video)
+        texture.encoding = THREE.sRGBEncoding
+
+        // load the cinema model
+        const gltf = await loadGltf('./models/cinema_screen.glb')
+        const cinemaModel = gltf.scene
+        cinemaModel.scale.setScalar(0.1)
+        webgl.scene.add(cinemaModel)
+
+        // create the video projector!
+        const projector = new THREE.PerspectiveCamera(30, 16 / 9, 0.01, 2)
+        projector.position.set(0, 0.55, 1.52)
+        const helper = new THREE.CameraHelper(projector)
+        webgl.controls.$onChanges((controls) => {
+          if (controls.showProjector) {
+            if (controls.showProjector.value) {
+              webgl.scene.add(helper)
+            } else {
+              webgl.scene.remove(helper)
+            }
+          }
+        })
+
+        // find the screen object in the cinema model
+        let screen
+        cinemaModel.traverse((child) => {
+          if (child.name === 'screen') {
+            screen = child
+          }
+        })
+
+        // assign the ProjectedMaterial to the screen
+        const material = new ProjectedMaterial({
+          camera: projector,
+          texture,
+          color: '#aaa', // the color of the remaining screen
+        })
+        screen.material = material
+
+        // everything is set, project!
+        material.project(screen)
+
+        // add lights
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
+        directionalLight.position.set(0, 10, 10)
+        webgl.scene.add(directionalLight)
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3)
+        webgl.scene.add(ambientLight)
+
+        // start animation loop
+        webgl.start()
+      }
+    </script>
+  </body>
+</html>
