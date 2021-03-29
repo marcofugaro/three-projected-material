@@ -385,7 +385,7 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
     } // make sure the matrix is updated
 
 
-    mesh.updateMatrixWorld(); // we save the object model matrix so it's projected relative
+    mesh.updateWorldMatrix(true, false); // we save the object model matrix so it's projected relative
     // to that position, like a snapshot
 
     this.uniforms.savedModelMatrix.value.copy(mesh.matrixWorld); // if the material is not the first, output just the texture
