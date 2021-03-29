@@ -418,6 +418,11 @@ function computeScaledDimensions(texture, camera, textureScale, cover) {
     return [1, 1]
   }
 
+  // return if it's a video and if the video hasn't loaded yet
+  if (texture.image.videoWidth === 0 && texture.image.videoHeight === 0) {
+    return [1, 1]
+  }
+
   const sourceWidth = texture.image.naturalWidth || texture.image.videoWidth
   const sourceHeight = texture.image.naturalHeight || texture.image.videoHeight
 
