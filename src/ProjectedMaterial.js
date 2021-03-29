@@ -418,7 +418,10 @@ function computeScaledDimensions(texture, camera, textureScale, cover) {
     return [1, 1]
   }
 
-  const ratio = texture.image.naturalWidth / texture.image.naturalHeight
+  const sourceWidth = texture.image.naturalWidth || texture.image.videoWidth
+  const sourceHeight = texture.image.naturalHeight || texture.image.videoHeight
+
+  const ratio = sourceWidth / sourceHeight
   const ratioCamera = getCameraRatio(camera)
   const widthCamera = 1
   const heightCamera = widthCamera * (1 / ratioCamera)
