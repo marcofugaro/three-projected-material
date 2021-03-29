@@ -282,7 +282,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     }
 
     // make sure the matrix is updated
-    mesh.updateMatrixWorld()
+    mesh.updateWorldMatrix(true, false)
 
     // we save the object model matrix so it's projected relative
     // to that position, like a snapshot
