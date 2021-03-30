@@ -295,7 +295,10 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
         'vec4 diffuseColor = vec4( diffuse, opacity );':
         /* glsl */
         `
-          vec2 uv = (vTexCoords.xy/ vTexCoords.w) * 0.5 + 0.5;
+          // clamp the w to make sure we don't project behind
+          float w = max(vTexCoords.w, 0.0);
+
+          vec2 uv = (vTexCoords.xy / w) * 0.5 + 0.5;
 
           uv += textureOffset;
 
