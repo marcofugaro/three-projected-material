@@ -4,6 +4,28 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.projectedMaterial = {}, global.THREE));
 }(this, (function (exports, THREE) { 'use strict';
 
+  function _interopNamespace(e) {
+    if (e && e.__esModule) return e;
+    var n = Object.create(null);
+    if (e) {
+      Object.keys(e).forEach(function (k) {
+        if (k !== 'default') {
+          var d = Object.getOwnPropertyDescriptor(e, k);
+          Object.defineProperty(n, k, d.get ? d : {
+            enumerable: true,
+            get: function () {
+              return e[k];
+            }
+          });
+        }
+      });
+    }
+    n['default'] = e;
+    return Object.freeze(n);
+  }
+
+  var THREE__namespace = /*#__PURE__*/_interopNamespace(THREE);
+
   var id = 0;
 
   function _classPrivateFieldLooseKey(name) {
@@ -59,28 +81,28 @@
 
   function getEncodingComponents(encoding) {
     switch (encoding) {
-      case THREE.LinearEncoding:
+      case THREE__namespace.LinearEncoding:
         return ['Linear', '( value )'];
 
-      case THREE.sRGBEncoding:
+      case THREE__namespace.sRGBEncoding:
         return ['sRGB', '( value )'];
 
-      case THREE.RGBEEncoding:
+      case THREE__namespace.RGBEEncoding:
         return ['RGBE', '( value )'];
 
-      case THREE.RGBM7Encoding:
+      case THREE__namespace.RGBM7Encoding:
         return ['RGBM', '( value, 7.0 )'];
 
-      case THREE.RGBM16Encoding:
+      case THREE__namespace.RGBM16Encoding:
         return ['RGBM', '( value, 16.0 )'];
 
-      case THREE.RGBDEncoding:
+      case THREE__namespace.RGBDEncoding:
         return ['RGBD', '( value, 256.0 )'];
 
-      case THREE.GammaEncoding:
+      case THREE__namespace.GammaEncoding:
         return ['Gamma', '( value, float( GAMMA_FACTOR ) )'];
 
-      case THREE.LogLuvEncoding:
+      case THREE__namespace.LogLuvEncoding:
         return ['LogLuv', '( value )'];
 
       default:
@@ -102,7 +124,7 @@
 
   var _textureScale = _classPrivateFieldLooseKey("textureScale");
 
-  class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
+  class ProjectedMaterial extends THREE__namespace.MeshPhysicalMaterial {
     get texture() {
       return this.uniforms.projectedTexture.value;
     }
@@ -141,7 +163,7 @@
       camera,
       texture,
       textureScale = 1,
-      textureOffset = new THREE.Vector2(),
+      textureOffset = new THREE__namespace.Vector2(),
       cover = false,
       ...options
     } = {}) {
@@ -194,20 +216,20 @@
         },
         // these will be set on project()
         viewMatrixCamera: {
-          value: new THREE.Matrix4()
+          value: new THREE__namespace.Matrix4()
         },
         projectionMatrixCamera: {
-          value: new THREE.Matrix4()
+          value: new THREE__namespace.Matrix4()
         },
         projPosition: {
-          value: new THREE.Vector3()
+          value: new THREE__namespace.Vector3()
         },
         projDirection: {
-          value: new THREE.Vector3(0, 0, -1)
+          value: new THREE__namespace.Vector3(0, 0, -1)
         },
         // we will set this later when we will have positioned the object
         savedModelMatrix: {
-          value: new THREE.Matrix4()
+          value: new THREE__namespace.Matrix4()
         },
         widthScaled: {
           value: widthScaled
@@ -428,10 +450,6 @@
         throw new Error(`The provided InstancedMeshhave't i samenclude thas e material where project() has been called from`);
       }
 
-      if (!instancedMesh.geometry.isBufferGeometry) {
-        throw new Error(`The InstancedMesh geometry must be a BufferGeometry`);
-      }
-
       if (!instancedMesh.geometry.attributes[`savedModelMatrix0`] || !instancedMesh.geometry.attributes[`savedModelMatrix1`] || !instancedMesh.geometry.attributes[`savedModelMatrix2`] || !instancedMesh.geometry.attributes[`savedModelMatrix3`]) {
         throw new Error(`No allocated data found on the geometry, please call 'allocateProjectionData(geometry, instancesCount)'`);
       }
@@ -519,10 +537,10 @@
   }
 
   function allocateProjectionData(geometry, instancesCount) {
-    geometry.setAttribute(`savedModelMatrix0`, new THREE.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
-    geometry.setAttribute(`savedModelMatrix1`, new THREE.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
-    geometry.setAttribute(`savedModelMatrix2`, new THREE.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
-    geometry.setAttribute(`savedModelMatrix3`, new THREE.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
+    geometry.setAttribute(`savedModelMatrix0`, new THREE__namespace.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
+    geometry.setAttribute(`savedModelMatrix1`, new THREE__namespace.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
+    geometry.setAttribute(`savedModelMatrix2`, new THREE__namespace.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
+    geometry.setAttribute(`savedModelMatrix3`, new THREE__namespace.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
   }
 
   exports.allocateProjectionData = allocateProjectionData;

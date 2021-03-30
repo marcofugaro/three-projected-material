@@ -1,4 +1,4 @@
-import { LogLuvEncoding, GammaEncoding, RGBDEncoding, RGBM16Encoding, RGBM7Encoding, RGBEEncoding, sRGBEncoding, LinearEncoding, MeshPhysicalMaterial, Vector2, Matrix4, Vector3, InstancedBufferAttribute } from 'three';
+import * as THREE from 'three';
 
 var id = 0;
 
@@ -55,28 +55,28 @@ function addLoadListener(texture, callback) {
 
 function getEncodingComponents(encoding) {
   switch (encoding) {
-    case LinearEncoding:
+    case THREE.LinearEncoding:
       return ['Linear', '( value )'];
 
-    case sRGBEncoding:
+    case THREE.sRGBEncoding:
       return ['sRGB', '( value )'];
 
-    case RGBEEncoding:
+    case THREE.RGBEEncoding:
       return ['RGBE', '( value )'];
 
-    case RGBM7Encoding:
+    case THREE.RGBM7Encoding:
       return ['RGBM', '( value, 7.0 )'];
 
-    case RGBM16Encoding:
+    case THREE.RGBM16Encoding:
       return ['RGBM', '( value, 16.0 )'];
 
-    case RGBDEncoding:
+    case THREE.RGBDEncoding:
       return ['RGBD', '( value, 256.0 )'];
 
-    case GammaEncoding:
+    case THREE.GammaEncoding:
       return ['Gamma', '( value, float( GAMMA_FACTOR ) )'];
 
-    case LogLuvEncoding:
+    case THREE.LogLuvEncoding:
       return ['LogLuv', '( value )'];
 
     default:
@@ -98,7 +98,7 @@ var _cover = _classPrivateFieldLooseKey("cover");
 
 var _textureScale = _classPrivateFieldLooseKey("textureScale");
 
-class ProjectedMaterial extends MeshPhysicalMaterial {
+class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   get texture() {
     return this.uniforms.projectedTexture.value;
   }
@@ -137,7 +137,7 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
     camera,
     texture,
     textureScale = 1,
-    textureOffset = new Vector2(),
+    textureOffset = new THREE.Vector2(),
     cover = false,
     ...options
   } = {}) {
@@ -190,20 +190,20 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
       },
       // these will be set on project()
       viewMatrixCamera: {
-        value: new Matrix4()
+        value: new THREE.Matrix4()
       },
       projectionMatrixCamera: {
-        value: new Matrix4()
+        value: new THREE.Matrix4()
       },
       projPosition: {
-        value: new Vector3()
+        value: new THREE.Vector3()
       },
       projDirection: {
-        value: new Vector3(0, 0, -1)
+        value: new THREE.Vector3(0, 0, -1)
       },
       // we will set this later when we will have positioned the object
       savedModelMatrix: {
-        value: new Matrix4()
+        value: new THREE.Matrix4()
       },
       widthScaled: {
         value: widthScaled
@@ -424,10 +424,6 @@ class ProjectedMaterial extends MeshPhysicalMaterial {
       throw new Error(`The provided InstancedMeshhave't i samenclude thas e material where project() has been called from`);
     }
 
-    if (!instancedMesh.geometry.isBufferGeometry) {
-      throw new Error(`The InstancedMesh geometry must be a BufferGeometry`);
-    }
-
     if (!instancedMesh.geometry.attributes[`savedModelMatrix0`] || !instancedMesh.geometry.attributes[`savedModelMatrix1`] || !instancedMesh.geometry.attributes[`savedModelMatrix2`] || !instancedMesh.geometry.attributes[`savedModelMatrix3`]) {
       throw new Error(`No allocated data found on the geometry, please call 'allocateProjectionData(geometry, instancesCount)'`);
     }
@@ -515,10 +511,10 @@ function computeScaledDimensions(texture, camera, textureScale, cover) {
 }
 
 function allocateProjectionData(geometry, instancesCount) {
-  geometry.setAttribute(`savedModelMatrix0`, new InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
-  geometry.setAttribute(`savedModelMatrix1`, new InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
-  geometry.setAttribute(`savedModelMatrix2`, new InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
-  geometry.setAttribute(`savedModelMatrix3`, new InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
+  geometry.setAttribute(`savedModelMatrix0`, new THREE.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
+  geometry.setAttribute(`savedModelMatrix1`, new THREE.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
+  geometry.setAttribute(`savedModelMatrix2`, new THREE.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
+  geometry.setAttribute(`savedModelMatrix3`, new THREE.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
 }
 
 export default ProjectedMaterial;
