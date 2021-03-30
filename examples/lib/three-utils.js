@@ -1,5 +1,5 @@
-import { BufferGeometryUtils } from 'https://unpkg.com/three@0.124.0/examples/jsm/utils/BufferGeometryUtils.js'
-import { GLTFLoader } from 'https://unpkg.com/three@0.124.0/examples/jsm/loaders/GLTFLoader.js'
+import { BufferGeometryUtils } from 'https://unpkg.com/three@0.126.1/examples/jsm/utils/BufferGeometryUtils.js'
+import { GLTFLoader } from 'https://unpkg.com/three@0.126.1/examples/jsm/loaders/GLTFLoader.js'
 
 // from https://discourse.threejs.org/t/functions-to-calculate-the-visible-width-height-at-a-given-z-depth-from-a-perspective-camera/269
 export function visibleHeightAtZDepth(depth, camera) {

@@ -179,8 +179,8 @@
       }
     </script>
     <script type="module">
-      import * as THREE from 'https://unpkg.com/three@0.124.0/build/three.module.js'
-      import { RoundedBoxBufferGeometry } from 'https://unpkg.com/three@0.124.0/examples/jsm/geometries/RoundedBoxBufferGeometry.js'
+      import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js'
+      import { RoundedBoxGeometry } from 'https://unpkg.com/three@0.126.1/examples/jsm/geometries/RoundedBoxGeometry.js'
       import * as eases from 'https://unpkg.com/eases-jsnext@1.0.10/dist/eases.es.js'
       import WebGLApp from './lib/WebGLApp.js'
       import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
@@ -206,7 +206,7 @@
       window.webgl = webgl
 
       const size = 1.8
-      const geometry = new RoundedBoxBufferGeometry(size, size, size, 3, 0.04)
+      const geometry = new RoundedBoxGeometry(size, size, size, 3, 0.04)
 
       // load the textures
       const textures = [

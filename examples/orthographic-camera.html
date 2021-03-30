@@ -21,7 +21,7 @@
     </p>
 
     <script type="module">
-      import * as THREE from 'https://unpkg.com/three@0.124.0/build/three.module.js'
+      import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
       import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
       import { random } from './lib/math-utils.js'
@@ -54,11 +54,7 @@
       const elements = new THREE.Group()
       const NUM_ELEMENTS = 130
       for (let i = 0; i < NUM_ELEMENTS; i++) {
-        const geometry = new THREE.BoxBufferGeometry(
-          random(0.1, 0.5),
-          random(0.1, 0.5),
-          random(0.1, 0.5)
-        )
+        const geometry = new THREE.BoxGeometry(random(0.1, 0.5), random(0.1, 0.5), random(0.1, 0.5))
         // create a different material for different objects
         // since each one will have a different position
         const material = new ProjectedMaterial({

@@ -331,10 +331,6 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       )
     }
 
-    if (!instancedMesh.geometry.isBufferGeometry) {
-      throw new Error(`The InstancedMesh geometry must be a BufferGeometry`)
-    }
-
     if (
       !instancedMesh.geometry.attributes[`savedModelMatrix0`] ||
       !instancedMesh.geometry.attributes[`savedModelMatrix1`] ||

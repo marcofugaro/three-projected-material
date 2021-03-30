@@ -1,7 +1,7 @@
 // Taken from https://github.com/marcofugaro/threejs-modern-app/blob/master/src/lib/WebGLApp.js
-import * as THREE from 'https://unpkg.com/three@0.124.0/build/three.module.js'
-import { OrbitControls } from 'https://unpkg.com/three@0.124.0/examples/jsm/controls/OrbitControls.js'
-import Stats from 'https://unpkg.com/three@0.124.0/examples/jsm/libs/stats.module.js'
+import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js'
+import { OrbitControls } from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js'
+import Stats from 'https://unpkg.com/three@0.126.1/examples/jsm/libs/stats.module.js'
 // import CCapture from 'https://unpkg.com/ccapture.js@1.1.0/build/CCapture.all.min.js'
 import { initControls } from './Controls.js'
 

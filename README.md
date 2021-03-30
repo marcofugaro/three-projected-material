@@ -49,7 +49,7 @@ const ProjectedMaterial = window.projectedMaterial.default
 Then, you can use it like this:
 
 ```js
-const geometry = new THREE.BoxBufferGeometry(1, 1, 1)
+const geometry = new THREE.BoxGeometry(1, 1, 1)
 const material = new ProjectedMaterial({
   camera, // the camera that acts as a projector
   texture, // the texture being projected

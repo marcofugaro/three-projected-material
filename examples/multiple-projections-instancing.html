@@ -21,7 +21,7 @@
     </p>
 
     <script type="module">
-      import * as THREE from 'https://unpkg.com/three@0.124.0/build/three.module.js'
+      import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js'
       import WebGLApp from './lib/WebGLApp.js'
       import ProjectedMaterial, { allocateProjectionData } from './lib/ProjectedMaterial.module.js'
       import State from './lib/controls-state.module.js'
@@ -60,7 +60,7 @@
       const texture = new THREE.TextureLoader().load('./images/lukasz-szmigiel-unsplash.jpg')
 
       // create a starting geometry
-      const geometry = new THREE.BoxBufferGeometry(0.3, 0.3, 0.3)
+      const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3)
       geometry.clearGroups()
 
       // make an array of materials
