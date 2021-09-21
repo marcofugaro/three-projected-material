@@ -94,17 +94,48 @@ function getTexelDecodingFunction(functionName, encoding) {
   `;
 }
 
+var _camera = _classPrivateFieldLooseKey("camera");
+
 var _cover = _classPrivateFieldLooseKey("cover");
 
 var _textureScale = _classPrivateFieldLooseKey("textureScale");
 
 class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
+  // internal values... they are exposed via getters
+  get camera() {
+    return _classPrivateFieldLooseBase(this, _camera)[_camera];
+  }
+
+  set camera(camera) {
+    if (!camera || !camera.isCamera) {
+      throw new Error('Invalid camera passed to the ProjectedMaterial');
+    }
+
+    _classPrivateFieldLooseBase(this, _camera)[_camera] = camera;
+    this.saveDimensions();
+  }
+
   get texture() {
     return this.uniforms.projectedTexture.value;
   }
 
   set texture(texture) {
+    if (!(texture != null && texture.isTexture)) {
+      throw new Error('Invalid texture set to the ProjectedMaterial');
+    }
+
     this.uniforms.projectedTexture.value = texture;
+    this.uniforms.isTextureLoaded.value = Boolean(texture.image);
+    this.projectedTexelToLinear = getTexelDecodingFunction('projectedTexelToLinear', texture.encoding);
+
+    if (!this.uniforms.isTextureLoaded) {
+      addLoadListener(texture, () => {
+        this.uniforms.isTextureLoaded.value = true;
+        this.saveDimensions();
+      });
+    } else {
+      this.saveDimensions();
+    }
   }
 
   get textureScale() {
@@ -134,22 +165,26 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   }
 
   constructor({
-    camera,
-    texture,
+    camera = new THREE.PerspectiveCamera(),
+    texture = new THREE.Texture(),
     textureScale = 1,
     textureOffset = new THREE.Vector2(),
     cover = false,
     ...options
   } = {}) {
-    if (!(texture != null && texture.isTexture)) {
+    if (!texture.isTexture) {
       throw new Error('Invalid texture passed to the ProjectedMaterial');
     }
 
-    if (!camera || !camera.isCamera) {
+    if (!camera.isCamera) {
       throw new Error('Invalid camera passed to the ProjectedMaterial');
     }
 
     super(options);
+    Object.defineProperty(this, _camera, {
+      writable: true,
+      value: void 0
+    });
     Object.defineProperty(this, _cover, {
       writable: true,
       value: void 0
@@ -160,16 +195,15 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     });
     Object.defineProperty(this, 'isProjectedMaterial', {
       value: true
-    }); // save a reference to the camera
+    }); // save the private variables
 
-    this.camera = camera; // save the private variables
-
+    _classPrivateFieldLooseBase(this, _camera)[_camera] = camera;
     _classPrivateFieldLooseBase(this, _cover)[_cover] = cover;
     _classPrivateFieldLooseBase(this, _textureScale)[_textureScale] = textureScale; // scale to keep the image proportions and apply textureScale
 
     const [widthScaled, heightScaled] = computeScaledDimensions(texture, camera, textureScale, cover); // apply encoding based on provided texture
 
-    const projectedTexelToLinear = getTexelDecodingFunction('projectedTexelToLinear', texture.encoding);
+    this.projectedTexelToLinear = getTexelDecodingFunction('projectedTexelToLinear', texture.encoding);
     this.uniforms = {
       projectedTexture: {
         value: texture
@@ -221,7 +255,7 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       Object.assign(this.uniforms, shader.uniforms);
       shader.uniforms = this.uniforms;
 
-      if (camera.isOrthographicCamera) {
+      if (this.camera.isOrthographicCamera) {
         shader.defines.ORTHOGRAPHIC = '';
       }
 
@@ -286,7 +320,7 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
           varying vec4 vWorldPosition;
           #endif
 
-          ${projectedTexelToLinear}
+          ${this.projectedTexelToLinear}
 
           float map(float value, float min1, float max1, float min2, float max2) {
             return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
@@ -342,7 +376,7 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
 
     window.addEventListener('resize', () => {
-      this.uniforms.projectionMatrixCamera.value.copy(camera.projectionMatrix);
+      this.uniforms.projectionMatrixCamera.value.copy(this.camera.projectionMatrix);
       this.saveDimensions();
     }); // If the image texture passed hasn't loaded yet,
     // wait for it to load and compute the correct proportions.
@@ -453,6 +487,16 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     }
   }
 
+  copy(source) {
+    super.copy(source);
+    this.camera = source.camera;
+    this.texture = source.texture;
+    this.textureScale = source.textureScale;
+    this.textureOffset = source.textureOffset;
+    this.cover = source.cover;
+    return this;
+  }
+
 } // get camera ratio from different types of cameras
 
 function getCameraRatio(camera) {
@@ -488,8 +532,8 @@ function computeScaledDimensions(texture, camera, textureScale, cover) {
     return [1, 1];
   }
 
-  const sourceWidth = texture.image.naturalWidth || texture.image.videoWidth;
-  const sourceHeight = texture.image.naturalHeight || texture.image.videoHeight;
+  const sourceWidth = texture.image.naturalWidth || texture.image.videoWidth || texture.image.clientWidth;
+  const sourceHeight = texture.image.naturalHeight || texture.image.videoHeight || texture.image.clientHeight;
   const ratio = sourceWidth / sourceHeight;
   const ratioCamera = getCameraRatio(camera);
   const widthCamera = 1;
