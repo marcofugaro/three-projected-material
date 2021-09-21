@@ -2,14 +2,49 @@ import * as THREE from 'three'
 import { monkeyPatch, addLoadListener, getTexelDecodingFunction } from './three-utils'
 
 export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
+  // internal values... they are exposed via getters
+  #camera
   #cover
   #textureScale
+
+  get camera() {
+    return this.#camera
+  }
+  set camera(camera) {
+    if (!camera || !camera.isCamera) {
+      throw new Error('Invalid camera passed to the ProjectedMaterial')
+    }
+
+    this.#camera = camera
+
+    this.saveDimensions()
+  }
 
   get texture() {
     return this.uniforms.projectedTexture.value
   }
   set texture(texture) {
+    if (!texture?.isTexture) {
+      throw new Error('Invalid texture set to the ProjectedMaterial')
+    }
+
     this.uniforms.projectedTexture.value = texture
+    this.uniforms.isTextureLoaded.value = Boolean(texture.image)
+
+    this.projectedTexelToLinear = getTexelDecodingFunction(
+      'projectedTexelToLinear',
+      texture.encoding
+    )
+
+    if (!this.uniforms.isTextureLoaded) {
+      addLoadListener(texture, () => {
+        this.uniforms.isTextureLoaded.value = true
+
+        this.saveDimensions()
+      })
+    } else {
+      this.saveDimensions()
+    }
   }
 
   get textureScale() {
@@ -36,18 +71,18 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   }
 
   constructor({
-    camera,
-    texture,
+    camera = new THREE.PerspectiveCamera(),
+    texture = new THREE.Texture(),
     textureScale = 1,
     textureOffset = new THREE.Vector2(),
     cover = false,
     ...options
   } = {}) {
-    if (!texture?.isTexture) {
+    if (!texture.isTexture) {
       throw new Error('Invalid texture passed to the ProjectedMaterial')
     }
 
-    if (!camera || !camera.isCamera) {
+    if (!camera.isCamera) {
       throw new Error('Invalid camera passed to the ProjectedMaterial')
     }
 
@@ -55,10 +90,8 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
     Object.defineProperty(this, 'isProjectedMaterial', { value: true })
 
-    // save a reference to the camera
-    this.camera = camera
-
     // save the private variables
+    this.#camera = camera
     this.#cover = cover
     this.#textureScale = textureScale
 
@@ -71,7 +104,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     )
 
     // apply encoding based on provided texture
-    const projectedTexelToLinear = getTexelDecodingFunction(
+    this.projectedTexelToLinear = getTexelDecodingFunction(
       'projectedTexelToLinear',
       texture.encoding
     )
@@ -103,7 +136,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       Object.assign(this.uniforms, shader.uniforms)
       shader.uniforms = this.uniforms
 
-      if (camera.isOrthographicCamera) {
+      if (this.camera.isOrthographicCamera) {
         shader.defines.ORTHOGRAPHIC = ''
       }
 
@@ -163,7 +196,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
           varying vec4 vWorldPosition;
           #endif
 
-          ${projectedTexelToLinear}
+          ${this.projectedTexelToLinear}
 
           float map(float value, float min1, float max1, float min2, float max2) {
             return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
@@ -217,7 +250,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     // We do this on window resize because there is no way to
     // listen for the resize of the renderer
     window.addEventListener('resize', () => {
-      this.uniforms.projectionMatrixCamera.value.copy(camera.projectionMatrix)
+      this.uniforms.projectionMatrixCamera.value.copy(this.camera.projectionMatrix)
 
       this.saveDimensions()
     })
@@ -391,6 +424,18 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       this.saveCameraMatrices()
     }
   }
+
+  copy(source) {
+    super.copy(source)
+
+    this.camera = source.camera
+    this.texture = source.texture
+    this.textureScale = source.textureScale
+    this.textureOffset = source.textureOffset
+    this.cover = source.cover
+
+    return this
+  }
 }
 
 // get camera ratio from different types of cameras
@@ -422,8 +467,10 @@ function computeScaledDimensions(texture, camera, textureScale, cover) {
     return [1, 1]
   }
 
-  const sourceWidth = texture.image.naturalWidth || texture.image.videoWidth || texture.image.clientWidth;
-  const sourceHeight = texture.image.naturalHeight || texture.image.videoHeight || texture.image.clientHeight;
+  const sourceWidth =
+    texture.image.naturalWidth || texture.image.videoWidth || texture.image.clientWidth
+  const sourceHeight =
+    texture.image.naturalHeight || texture.image.videoHeight || texture.image.clientHeight
 
   const ratio = sourceWidth / sourceHeight
   const ratioCamera = getCameraRatio(camera)
