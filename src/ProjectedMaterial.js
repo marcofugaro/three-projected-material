@@ -12,7 +12,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   }
   set camera(camera) {
     if (!camera || !camera.isCamera) {
-      throw new Error('Invalid camera passed to the ProjectedMaterial')
+      throw new Error('Invalid camera set to the ProjectedMaterial')
     }
 
     this.#camera = camera
