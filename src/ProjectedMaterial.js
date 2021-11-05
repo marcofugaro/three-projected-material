@@ -198,7 +198,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
           ${this.projectedTexelToLinear}
 
-          float map(float value, float min1, float max1, float min2, float max2) {
+          float mapRange(float value, float min1, float max1, float min2, float max2) {
             return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
           }
         `,
@@ -211,8 +211,8 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
           uv += textureOffset;
 
           // apply the corrected width and height
-          uv.x = map(uv.x, 0.0, 1.0, 0.5 - widthScaled / 2.0, 0.5 + widthScaled / 2.0);
-          uv.y = map(uv.y, 0.0, 1.0, 0.5 - heightScaled / 2.0, 0.5 + heightScaled / 2.0);
+          uv.x = mapRange(uv.x, 0.0, 1.0, 0.5 - widthScaled / 2.0, 0.5 + widthScaled / 2.0);
+          uv.y = mapRange(uv.y, 0.0, 1.0, 0.5 - heightScaled / 2.0, 0.5 + heightScaled / 2.0);
 
           // this makes sure we don't sample out of the texture
           bool isInTexture = (max(uv.x, uv.y) <= 1.0 && min(uv.x, uv.y) >= 0.0);
