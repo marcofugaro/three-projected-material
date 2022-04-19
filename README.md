@@ -6,58 +6,77 @@
   <a href="https://marcofugaro.github.io/three-projected-material/"><img src="screenshot.png" width="700"></a>
 </p>
 
-## Installation
+## Recommended Installation
 
-After having installed three.js, install it from npm with:
+This method supports `TypeScript`.
 
-```
-npm install three-projected-material
-```
-
-or
+If you're familiar with [Node.js](https://nodejs.org/) and managing dependencies
+with `npm`, and have a build setup in place or know how to serve ES modules to a
+browser, then install `three` and `three-projected-material` from NPM,
 
 ```
-yarn add three-projected-material
+npm install three three-projected-material
 ```
 
-You can also use it from the CDN, just make sure to put this after the three.js script:
+then import `ProjectedMaterial` and you'll be on your way:
+
+```js
+import {ProjectedMaterial} from 'three-projected-material'
+
+const mat = new ProjectedMaterial(/*...*/)
+// ...
+```
+
+## Alternative Installation
+
+These methods do not support `TypeScript`, only plain `JavaScript`.
+
+If you don't have a build setup or you are only familiar with plain HTML files,
+import `three-projected-material` from a
+[CDN](https://www.cloudflare.com/learning/cdn/what-is-a-cdn/) such as
+https://unpkg.com, like so:
 
 ```html
-<script src="https://unpkg.com/three-projected-material"></script>
+<script type="module">
+	import {ProjectedMaterial} from 'https://unpkg.com/three-projected-material@^3.0.0'
+
+	const mat = new ProjectedMaterial(/*...*/)
+	// ...
+</script>
 ```
 
-## Getting started
+If you're still loading libraries as global variables using old-school script
+tags (f.e. you have a global `THREE` object), you can use the `.global.js` file,
+although we recommend using ES Modules as per above. Make sure to put the global
+script after the three.js script:
 
-You can import it like this
+```html
+<script src="..../three.js"></script>
+<script src="https://unpkg.com/three-projected-material@^3.0.0/dist/ProjectedMaterial.global.js"></script>
+<script>
+	const {ProjectedMaterial} = window.projectedMaterial
 
-```js
-import ProjectedMaterial from 'three-projected-material'
+	const mat = new ProjectedMaterial(/*...*/)
+	// ...
+</script>
 ```
 
-or, if you're using CommonJS
+## Usage
+
+Use `ProjectedMaterial` like so:
 
 ```js
-const ProjectedMaterial = require('three-projected-material').default
-```
+// ... get the ProjectedMaterial class as per above ...
 
-Instead, if you install it from the CDN, its exposed under `window.projectedMaterial`, and you use it like this
-
-```js
-const ProjectedMaterial = window.projectedMaterial.default
-```
-
-Then, you can use it like this:
-
-```js
 const geometry = new THREE.BoxGeometry(1, 1, 1)
 const material = new ProjectedMaterial({
-  camera, // the camera that acts as a projector
-  texture, // the texture being projected
-  textureScale: 0.8, // scale down the texture a bit
-  textureOffset: new THREE.Vector2(0.1, 0.1), // you can translate the texture if you want
-  cover: true, // enable background-size: cover behaviour, by default it's like background-size: contain
-  color: '#ccc', // the color of the object if it's not projected on
-  roughness: 0.3, // you can pass any other option that belongs to MeshPhysicalMaterial
+	camera, // the camera that acts as a projector
+	texture, // the texture being projected
+	textureScale: 0.8, // scale down the texture a bit
+	textureOffset: new THREE.Vector2(0.1, 0.1), // you can translate the texture if you want
+	cover: true, // enable background-size: cover behaviour, by default it's like background-size: contain
+	color: '#ccc', // the color of the object if it's not projected on
+	roughness: 0.3, // you can pass any other option that belongs to MeshPhysicalMaterial
 })
 const box = new THREE.Mesh(geometry, material)
 webgl.scene.add(box)
@@ -69,7 +88,7 @@ box.rotation.y = -Math.PI / 4
 material.project(box)
 ```
 
-ProjectedMaterial also supports **instanced meshes** via three.js' [InstancedMesh](https://threejs.org/docs/index.html#api/en/objects/InstancedMesh), and even **multiple projections**. Check out the examples below for a detailed guide!
+`ProjectedMaterial` also supports **instanced meshes** via three.js' [InstancedMesh](https://threejs.org/docs/index.html#api/en/objects/InstancedMesh), and even **multiple projections**. Check out the examples below for a detailed guide!
 
 ## [Examples](https://marcofugaro.github.io/three-projected-material/)
 
@@ -87,7 +106,7 @@ ProjectedMaterial also supports **instanced meshes** via three.js' [InstancedMes
 
 ## API Reference
 
-### new ProjectedMaterial({ camera, texture, ...others })
+### `new ProjectedMaterial({ camera, texture, ...others })`
 
 Create a new material to later use for a mesh.
 
@@ -109,7 +128,7 @@ material.texture = newTexture
 material.textureScale = 0.8
 ```
 
-### material.project(mesh)
+### `material.project(mesh)`
 
 Project the texture from the camera on the mesh. With this method we "take a snaphot" of the current mesh and camera position in space. The
 After calling this method, you can move the mesh or the camera freely.
@@ -118,7 +137,7 @@ After calling this method, you can move the mesh or the camera freely.
 | ------ | ---------------------------------------------------- |
 | `mesh` | The mesh that has a `ProjectedMaterial` as material. |
 
-### allocateProjectionData(geometry, instancesCount)
+### `allocateProjectionData(geometry, instancesCount)`
 
 Allocate the data that will be used when projecting on an [InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh). Use this on the geometry that will be used in pair with a `ProjectedMaterial` when initializing `InstancedMesh`.
 
@@ -129,7 +148,7 @@ This needs to be called before `.projectInstanceAt()`.
 | `geometry`       | The geometry that will be passed to the `InstancedMesh`.                      |
 | `instancesCount` | The number of instances, the same that will be passed to the `InstancedMesh`. |
 
-### material.projectInstanceAt(index, instancedMesh, matrix)
+### `material.projectInstanceAt(index, instancedMesh, matrix)`
 
 Do the projection for an [InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh). Don't forget to call `updateMatrix()` like you do before calling `InstancedMesh.setMatrixAt()`.
 

@@ -1,5 +1,5 @@
 node_modules/
-build/
+dist/
 examples/lib/controls-state.module.js
 examples/lib/controls-gui.module.js
-examples/lib/ProjectedMaterial.module.js
+examples/lib/ProjectedMaterial.js

@@ -1,83 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Envmap example - three-projected-material</title>
-    <link rel="stylesheet" href="css/style.css" type="text/css" />
-  </head>
-  <body>
-    <canvas id="app"></canvas>
-    <a
-      class="source-fab"
-      target="_blank"
-      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/envmap.html"
-      title="View source code on GitHub"
-    >
-      <img src="images/source.svg" />
-    </a>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Envmap example - three-projected-material</title>
+		<link rel="stylesheet" href="css/style.css" type="text/css" />
+	</head>
+	<body>
+		<canvas id="app"></canvas>
+		<a
+			class="source-fab"
+			target="_blank"
+			href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/envmap.html"
+			title="View source code on GitHub"
+		>
+			<img src="images/source.svg" />
+		</a>
 
-    <script type="module">
-      import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js'
-      import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
+		<script async src="//ga.jspm.io/npm:es-module-shims@1.5.4/dist/es-module-shims.js"></script>
 
-      // grab our canvas
-      const canvas = document.querySelector('#app')
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://unpkg.com/three@^0.139.0/src/Three.js",
+					"three/": "https://unpkg.com/three@^0.139.0/"
+				}
+			}
+		</script>
 
-      // WebGLApp is a really basic wrapper around the three.js setup,
-      // it hides all unnecessary stuff not related to this example
-      const webgl = new WebGLApp({
-        canvas,
-        // show the fps counter from stats.js
-        showFps: true,
-        // enable orbit-controls
-        orbitControls: true,
-        // enable gamma
-        gamma: true,
-      })
+		<script type="module">
+			import {TextureLoader} from 'three/src/loaders/TextureLoader.js'
+			import {EquirectangularReflectionMapping} from 'three/src/constants.js'
+			import {sRGBEncoding} from 'three/src/constants.js'
+			import {IcosahedronGeometry} from 'three/src/geometries/IcosahedronGeometry.js'
+			import {Color} from 'three/src/math/Color.js'
+			import {Mesh} from 'three/src/objects/Mesh.js'
+			import {AmbientLight} from 'three/src/lights/AmbientLight.js'
+			import WebGLApp from './lib/WebGLApp.js'
+			import {ProjectedMaterial} from './lib/ProjectedMaterial.js'
 
-      // attach it to the window to inspect in the console
-      window.webgl = webgl
+			// grab our canvas
+			const canvas = document.querySelector('#app')
 
-      // load the example texture
-      const texture = new THREE.TextureLoader().load('./images/charles-unsplash.jpg')
-      texture.encoding = THREE.sRGBEncoding
+			// WebGLApp is a really basic wrapper around the three.js setup,
+			// it hides all unnecessary stuff not related to this example
+			const webgl = new WebGLApp({
+				canvas,
+				// show the fps counter from stats.js
+				showFps: true,
+				// enable orbit-controls
+				orbitControls: true,
+				// enable gamma
+				gamma: true,
+			})
 
-      // load the envMap
-      const envMap = new THREE.TextureLoader().load('./images/kandao3_blurred.jpg')
-      envMap.mapping = THREE.EquirectangularReflectionMapping
-      envMap.encoding = THREE.sRGBEncoding
+			// attach it to the window to inspect in the console
+			window.webgl = webgl
 
-      const geometry = new THREE.IcosahedronGeometry(1, 6)
-      const material = new ProjectedMaterial({
-        camera: webgl.camera,
-        texture,
-        envMap,
-        textureScale: 2,
-        // convert the color since gamma is enabled
-        color: new THREE.Color('#cccccc').convertSRGBToLinear(),
-        // make it reflective
-        roughness: 0,
-      })
+			// load the example texture
+			const texture = new TextureLoader().load('./images/charles-unsplash.jpg')
+			texture.encoding = sRGBEncoding
 
-      const mesh = new THREE.Mesh(geometry, material)
-      webgl.scene.add(mesh)
+			// load the envMap
+			const envMap = new TextureLoader().load('./images/kandao3_blurred.jpg')
+			envMap.mapping = EquirectangularReflectionMapping
+			envMap.encoding = sRGBEncoding
 
-      material.project(mesh)
+			const geometry = new IcosahedronGeometry(1, 6)
+			const material = new ProjectedMaterial({
+				camera: webgl.camera,
+				texture,
+				envMap,
+				textureScale: 2,
+				// convert the color since gamma is enabled
+				color: new Color('#cccccc').convertSRGBToLinear(),
+				// make it reflective
+				roughness: 0,
+			})
 
-      // set the scene background
-      webgl.scene.background = envMap
+			const mesh = new Mesh(geometry, material)
+			webgl.scene.add(mesh)
 
-      // the envMap could also be set like this
-      // webgl.scene.environment = envMap
+			material.project(mesh)
 
-      // add lights
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
-      webgl.scene.add(ambientLight)
+			// set the scene background
+			webgl.scene.background = envMap
 
-      // start animation loop
-      webgl.start()
-    </script>
-  </body>
+			// the envMap could also be set like this
+			// webgl.scene.environment = envMap
+
+			// add lights
+			const ambientLight = new AmbientLight(0xffffff, 0.5)
+			webgl.scene.add(ambientLight)
+
+			// start animation loop
+			webgl.start()
+		</script>
+	</body>
 </html>

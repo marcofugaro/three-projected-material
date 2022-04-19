@@ -1,200 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Multiple projections instancing example - three-projected-material</title>
-    <link rel="stylesheet" href="css/style.css" type="text/css" />
-  </head>
-  <body>
-    <canvas id="app"></canvas>
-    <a
-      class="source-fab"
-      target="_blank"
-      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/multiple-projections-instancing.html"
-      title="View source code on GitHub"
-    >
-      <img src="images/source.svg" />
-    </a>
-    <p class="title white">
-      Inspired by <a href="https://www.instagram.com/dirkkoy/" target="_blank">@dirkkoy</a>
-    </p>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Multiple projections instancing example - three-projected-material</title>
+		<link rel="stylesheet" href="css/style.css" type="text/css" />
+	</head>
+	<body>
+		<canvas id="app"></canvas>
+		<a
+			class="source-fab"
+			target="_blank"
+			href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/multiple-projections-instancing.html"
+			title="View source code on GitHub"
+		>
+			<img src="images/source.svg" />
+		</a>
+		<p class="title white">
+			Inspired by <a href="https://www.instagram.com/dirkkoy/" target="_blank">@dirkkoy</a>
+		</p>
 
-    <script type="module">
-      import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js'
-      import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial, { allocateProjectionData } from './lib/ProjectedMaterial.module.js'
-      import State from './lib/controls-state.module.js'
-      import { visibleWidthAtZDepth, visibleHeightAtZDepth } from './lib/three-utils.js'
-      import { random } from './lib/math-utils.js'
+		<script async src="//ga.jspm.io/npm:es-module-shims@1.5.4/dist/es-module-shims.js"></script>
 
-      // grab our canvas
-      const canvas = document.querySelector('#app')
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://unpkg.com/three@^0.139.0/src/Three.js",
+					"three/": "https://unpkg.com/three@^0.139.0/"
+				}
+			}
+		</script>
 
-      // WebGLApp is a really basic wrapper around the three.js setup,
-      // it hides all unnecessary stuff not related to this example
-      const webgl = new WebGLApp({
-        canvas,
-        // set the scene background color
-        background: '#111',
-        // show the fps counter from stats.js
-        showFps: true,
-        // enable orbit-controls
-        orbitControls: true,
-        // create an ortographic camera,
-        // it will be exposed as webgl.camera
-        orthographic: true,
-      })
+		<script type="module">
+			import {Object3D} from 'three/src/core/Object3D.js'
+			import {Matrix4} from 'three/src/math/Matrix4.js'
+			import {TextureLoader} from 'three/src/loaders/TextureLoader.js'
+			import {BoxGeometry} from 'three/src/geometries/BoxGeometry.js'
+			import {InstancedMesh} from 'three/src/objects/InstancedMesh.js'
+			import {Vector3} from 'three/src/math/Vector3.js'
+			import {Quaternion} from 'three/src/math/Quaternion.js'
+			import {AmbientLight} from 'three/src/lights/AmbientLight.js'
+			import WebGLApp from './lib/WebGLApp.js'
+			import {ProjectedMaterial, allocateProjectionData} from './lib/ProjectedMaterial.js'
+			import State from './lib/controls-state.module.js'
+			import {visibleWidthAtZDepth, visibleHeightAtZDepth} from './lib/utils.js'
+			import {random} from './lib/math-utils.js'
 
-      // attach it to the window to inspect in the console
-      window.webgl = webgl
+			// grab our canvas
+			const canvas = document.querySelector('#app')
 
-      const NUM_ELEMENTS = 50
-      const dummy = new THREE.Object3D()
-      const matrixDummy = new THREE.Matrix4()
+			// WebGLApp is a really basic wrapper around the three.js setup,
+			// it hides all unnecessary stuff not related to this example
+			const webgl = new WebGLApp({
+				canvas,
+				// set the scene background color
+				background: '#111',
+				// show the fps counter from stats.js
+				showFps: true,
+				// enable orbit-controls
+				orbitControls: true,
+				// create an ortographic camera,
+				// it will be exposed as webgl.camera
+				orthographic: true,
+			})
 
-      const width = visibleWidthAtZDepth(0, webgl.camera)
-      const height = visibleHeightAtZDepth(0, webgl.camera)
+			// attach it to the window to inspect in the console
+			window.webgl = webgl
 
-      // load the texture/textures
-      const texture = new THREE.TextureLoader().load('./images/lukasz-szmigiel-unsplash.jpg')
+			const NUM_ELEMENTS = 50
+			const dummy = new Object3D()
+			const matrixDummy = new Matrix4()
 
-      // create a starting geometry
-      const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3)
-      geometry.clearGroups()
+			const width = visibleWidthAtZDepth(0, webgl.camera)
+			const height = visibleHeightAtZDepth(0, webgl.camera)
 
-      // make an array of materials
-      const materials = []
-      for (let i = 0; i < 2; i++) {
-        const material = new ProjectedMaterial({
-          camera: webgl.camera,
-          texture,
-          color: webgl.background,
-          cover: true,
-          // needed for multiple materials
-          transparent: true,
-        })
+			// load the texture/textures
+			const texture = new TextureLoader().load('./images/lukasz-szmigiel-unsplash.jpg')
 
-        materials.push(material)
+			// create a starting geometry
+			const geometry = new BoxGeometry(0.3, 0.3, 0.3)
+			geometry.clearGroups()
 
-        // reserve a group for the material on the geometry
-        // https://stackoverflow.com/a/49708915
-        geometry.addGroup(0, Infinity, i)
-      }
+			// make an array of materials
+			const materials = []
+			for (let i = 0; i < 2; i++) {
+				const material = new ProjectedMaterial({
+					camera: webgl.camera,
+					texture,
+					color: webgl.background,
+					cover: true,
+					// needed for multiple materials
+					transparent: true,
+				})
 
-      // allocate the projection data as attributes on the geometry
-      allocateProjectionData(geometry, NUM_ELEMENTS)
+				materials.push(material)
 
-      // create the instanced mesh
-      const instancedMesh = new THREE.InstancedMesh(geometry, materials, NUM_ELEMENTS)
-      webgl.scene.add(instancedMesh)
+				// reserve a group for the material on the geometry
+				// https://stackoverflow.com/a/49708915
+				geometry.addGroup(0, Infinity, i)
+			}
 
-      // create a bunch of instanced elements
-      for (let i = 0; i < NUM_ELEMENTS; i++) {
-        // position the elements
-        if (i === 0) {
-          dummy.position.set(0, 0, -width / 2 - 0.15)
-          dummy.scale.set(width * 8, height * 8, 1)
-        } else if (i === 1) {
-          dummy.position.set(0, height / 2 + 0.5, 0)
-          dummy.scale.set(height * 8, 1, width * 8)
-        } else if (i < NUM_ELEMENTS * (1 / 3)) {
-          dummy.position.x = random(-width / 2, width / 2)
-          dummy.position.y = random(-height / 2, height / 2)
-          dummy.position.z = -width / 2 + 0.3
+			// allocate the projection data as attributes on the geometry
+			allocateProjectionData(geometry, NUM_ELEMENTS)
 
-          dummy.scale.x = random(1, 4)
-          dummy.scale.y = random(1, 4)
-          dummy.scale.z = random(1, 4)
-        } else if (i < NUM_ELEMENTS * (2 / 3)) {
-          dummy.position.x = random(-width / 2, width / 2)
-          dummy.position.y = height / 2 + 0.3
-          dummy.position.z = random(-width / 2, width / 2)
+			// create the instanced mesh
+			const instancedMesh = new InstancedMesh(geometry, materials, NUM_ELEMENTS)
+			webgl.scene.add(instancedMesh)
 
-          dummy.scale.x = random(1, 4)
-          dummy.scale.y = random(1, 4)
-          dummy.scale.z = random(1, 4)
-        } else {
-          dummy.position.x = random(-width / 2, width / 2)
-          dummy.position.y = random(-height / 2, height / 2)
-          dummy.position.z = random(-width / 2, width / 2)
+			// create a bunch of instanced elements
+			for (let i = 0; i < NUM_ELEMENTS; i++) {
+				// position the elements
+				if (i === 0) {
+					dummy.position.set(0, 0, -width / 2 - 0.15)
+					dummy.scale.set(width * 8, height * 8, 1)
+				} else if (i === 1) {
+					dummy.position.set(0, height / 2 + 0.5, 0)
+					dummy.scale.set(height * 8, 1, width * 8)
+				} else if (i < NUM_ELEMENTS * (1 / 3)) {
+					dummy.position.x = random(-width / 2, width / 2)
+					dummy.position.y = random(-height / 2, height / 2)
+					dummy.position.z = -width / 2 + 0.3
 
-          dummy.scale.x = random(0.5, 3)
-          dummy.scale.y = random(0.5, 3)
-          dummy.scale.z = random(0.5, 3)
-        }
+					dummy.scale.x = random(1, 4)
+					dummy.scale.y = random(1, 4)
+					dummy.scale.z = random(1, 4)
+				} else if (i < NUM_ELEMENTS * (2 / 3)) {
+					dummy.position.x = random(-width / 2, width / 2)
+					dummy.position.y = height / 2 + 0.3
+					dummy.position.z = random(-width / 2, width / 2)
 
-        dummy.updateMatrix()
-        instancedMesh.setMatrixAt(i, dummy.matrix)
+					dummy.scale.x = random(1, 4)
+					dummy.scale.y = random(1, 4)
+					dummy.scale.z = random(1, 4)
+				} else {
+					dummy.position.x = random(-width / 2, width / 2)
+					dummy.position.y = random(-height / 2, height / 2)
+					dummy.position.z = random(-width / 2, width / 2)
 
-        // project the first texture!
-        instancedMesh.material[0].projectInstanceAt(i, instancedMesh, dummy.matrix)
-      }
+					dummy.scale.x = random(0.5, 3)
+					dummy.scale.y = random(0.5, 3)
+					dummy.scale.z = random(0.5, 3)
+				}
 
-      const initialCameraPosition = new THREE.Vector3().copy(webgl.camera.position)
+				dummy.updateMatrix()
+				instancedMesh.setMatrixAt(i, dummy.matrix)
 
-      // move the camera in a different position
-      webgl.camera.position.set(0, -4, 0)
-      webgl.camera.up.set(-1, 0, 0)
-      webgl.camera.lookAt(0, 0, 0)
+				// project the first texture!
+				instancedMesh.material[0].projectInstanceAt(i, instancedMesh, dummy.matrix)
+			}
 
-      // project the second texture!
-      for (let i = 0; i < NUM_ELEMENTS; i++) {
-        instancedMesh.getMatrixAt(i, matrixDummy)
-        instancedMesh.material[1].projectInstanceAt(i, instancedMesh, matrixDummy)
-      }
+			const initialCameraPosition = new Vector3().copy(webgl.camera.position)
 
-      // reset the camera position
-      webgl.camera.position.copy(initialCameraPosition)
-      webgl.camera.up.copy(THREE.Object3D.DefaultUp)
-      webgl.camera.lookAt(0, 0, 0)
+			// move the camera in a different position
+			webgl.camera.position.set(0, -4, 0)
+			webgl.camera.up.set(-1, 0, 0)
+			webgl.camera.lookAt(0, 0, 0)
 
-      // move the mesh any way you want! in this case
-      // let's do an animation
-      const initialQuaternion = instancedMesh.quaternion.clone()
+			// project the second texture!
+			for (let i = 0; i < NUM_ELEMENTS; i++) {
+				instancedMesh.getMatrixAt(i, matrixDummy)
+				instancedMesh.material[1].projectInstanceAt(i, instancedMesh, matrixDummy)
+			}
 
-      dummy.applyMatrix4(new THREE.Matrix4())
-      dummy.rotateX(-Math.PI / 2)
-      dummy.rotateY(Math.PI / 2)
-      const finalQuaternion = dummy.quaternion.clone()
+			// reset the camera position
+			webgl.camera.position.copy(initialCameraPosition)
+			webgl.camera.up.copy(Object3D.DefaultUp)
+			webgl.camera.lookAt(0, 0, 0)
 
-      const dummyQuaternion = new THREE.Quaternion()
-      const SPEED = 1
-      const WAIT_MS = 1500
-      let t = 0
-      let isPaused = false
-      let hasPausedRecently = false
-      webgl.onUpdate((dt, time) => {
-        const f = Math.cos(t) * 0.5 + 0.5
+			// move the mesh any way you want! in this case
+			// let's do an animation
+			const initialQuaternion = instancedMesh.quaternion.clone()
 
-        if (f > 0.9999 && !isPaused && !hasPausedRecently) {
-          isPaused = true
-          hasPausedRecently = true
-          setTimeout(() => (isPaused = false), WAIT_MS)
-          setTimeout(() => (hasPausedRecently = false), WAIT_MS + 100)
-        }
+			dummy.applyMatrix4(new Matrix4())
+			dummy.rotateX(-Math.PI / 2)
+			dummy.rotateY(Math.PI / 2)
+			const finalQuaternion = dummy.quaternion.clone()
 
-        if (f < 0.0001 && !isPaused && !hasPausedRecently) {
-          isPaused = true
-          hasPausedRecently = true
-          setTimeout(() => (isPaused = false), WAIT_MS)
-          setTimeout(() => (hasPausedRecently = false), WAIT_MS + 100)
-        }
+			const dummyQuaternion = new Quaternion()
+			const SPEED = 1
+			const WAIT_MS = 1500
+			let t = 0
+			let isPaused = false
+			let hasPausedRecently = false
+			webgl.onUpdate((dt, time) => {
+				const f = Math.cos(t) * 0.5 + 0.5
 
-        if (isPaused) return
+				if (f > 0.9999 && !isPaused && !hasPausedRecently) {
+					isPaused = true
+					hasPausedRecently = true
+					setTimeout(() => (isPaused = false), WAIT_MS)
+					setTimeout(() => (hasPausedRecently = false), WAIT_MS + 100)
+				}
 
-        t += dt * SPEED
+				if (f < 0.0001 && !isPaused && !hasPausedRecently) {
+					isPaused = true
+					hasPausedRecently = true
+					setTimeout(() => (isPaused = false), WAIT_MS)
+					setTimeout(() => (hasPausedRecently = false), WAIT_MS + 100)
+				}
 
-        dummyQuaternion.copy(initialQuaternion).slerp(finalQuaternion, f)
-        instancedMesh.quaternion.copy(dummyQuaternion)
-      })
+				if (isPaused) return
 
-      // add lights
-      const ambientLight = new THREE.AmbientLight(0xffffff, 1)
-      webgl.scene.add(ambientLight)
+				t += dt * SPEED
 
-      // start animation loop
-      webgl.start()
-    </script>
-  </body>
+				dummyQuaternion.copy(initialQuaternion).slerp(finalQuaternion, f)
+				instancedMesh.quaternion.copy(dummyQuaternion)
+			})
+
+			// add lights
+			const ambientLight = new AmbientLight(0xffffff, 1)
+			webgl.scene.add(ambientLight)
+
+			// start animation loop
+			webgl.start()
+		</script>
+	</body>
 </html>

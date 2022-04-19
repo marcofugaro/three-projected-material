@@ -1,334 +1,350 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>three-projected-material</title>
-    <meta
-      name="description"
-      content="Three.js Material which lets you do Texture Projection on a 3d Model"
-    />
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>three-projected-material</title>
+		<meta
+			name="description"
+			content="Three.js Material which lets you do Texture Projection on a 3d Model"
+		/>
 
-    <link href="https://unpkg.com/normalize.css@8.0.1/normalize.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700" rel="stylesheet" />
-    <style>
-      :root {
-        --primary: #3149d5;
-        --accent: #1ebe98;
-      }
+		<link href="https://unpkg.com/normalize.css@8.0.1/normalize.css" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700" rel="stylesheet" />
+		<style>
+			:root {
+				--primary: #3149d5;
+				--accent: #1ebe98;
+			}
 
-      body {
-        font-family: Open Sans, sans-serif;
-        margin: 0;
-        padding: 0;
-      }
+			body {
+				font-family: Open Sans, sans-serif;
+				margin: 0;
+				padding: 0;
+			}
 
-      h1,
-      h2 {
-        font-weight: 600;
-      }
+			h1,
+			h2 {
+				font-weight: 600;
+			}
 
-      h1 {
-        font-size: 44px;
-      }
+			h1 {
+				font-size: 44px;
+			}
 
-      h2 {
-        font-size: 32px;
-        margin: 3rem 0 1rem;
-      }
+			h2 {
+				font-size: 32px;
+				margin: 3rem 0 1rem;
+			}
 
-      a {
-        color: var(--primary);
-      }
+			a {
+				color: var(--primary);
+			}
 
-      a:hover {
-        color: var(--accent);
-      }
+			a:hover {
+				color: var(--accent);
+			}
 
-      .cover {
-        color: white;
-        position: relative;
-        text-align: center;
-        line-height: 1.5;
-        padding-top: 22rem;
-        padding-left: 2rem;
-        padding-right: 2rem;
-        padding-bottom: 4rem;
-        background: radial-gradient(#353535, #222 80%);
-      }
+			.cover {
+				color: white;
+				position: relative;
+				text-align: center;
+				line-height: 1.5;
+				padding-top: 22rem;
+				padding-left: 2rem;
+				padding-right: 2rem;
+				padding-bottom: 4rem;
+				background: radial-gradient(#353535, #222 80%);
+			}
 
-      .cover h1 {
-        margin: 0 0 2rem;
-      }
+			.cover h1 {
+				margin: 0 0 2rem;
+			}
 
-      .cover p {
-        font-size: 22px;
-      }
+			.cover p {
+				font-size: 22px;
+			}
 
-      .cover a {
-        color: white;
-      }
+			.cover a {
+				color: white;
+			}
 
-      .container {
-        max-width: 54rem;
-        margin: 0 auto;
-        padding: 0 2rem 2rem;
-      }
+			.container {
+				max-width: 54rem;
+				margin: 0 auto;
+				padding: 0 2rem 2rem;
+			}
 
-      @media (max-width: 44rem) {
-        .cover {
-          padding-left: 1rem;
-          padding-right: 1rem;
-        }
-        .container {
-          padding: 0 1rem 2rem;
-        }
-        h1 {
-          font-size: 32px;
-        }
-        .cover p {
-          font-size: 18px;
-        }
-      }
+			@media (max-width: 44rem) {
+				.cover {
+					padding-left: 1rem;
+					padding-right: 1rem;
+				}
+				.container {
+					padding: 0 1rem 2rem;
+				}
+				h1 {
+					font-size: 32px;
+				}
+				.cover p {
+					font-size: 18px;
+				}
+			}
 
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        grid-gap: 2rem;
-      }
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+				grid-gap: 2rem;
+			}
 
-      .didascalia {
-        margin-top: 0.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-      }
+			.didascalia {
+				margin-top: 0.5rem;
+				display: flex;
+				justify-content: space-between;
+				align-items: baseline;
+			}
 
-      .title-link {
-        font-size: 20px;
-        font-weight: 600;
-      }
+			.title-link {
+				font-size: 20px;
+				font-weight: 600;
+			}
 
-      img {
-        display: block;
-        width: 100%;
-        height: auto;
-      }
+			img {
+				display: block;
+				width: 100%;
+				height: auto;
+			}
 
-      /* show the canvas instead */
-      .cover h1 {
-        display: none;
-        pointer-events: none;
-      }
+			/* show the canvas instead */
+			.cover h1 {
+				display: none;
+				pointer-events: none;
+			}
 
-      #cover-canvas {
-        position: absolute;
-        top: 2rem;
-        left: 0;
-        outline: none;
-        pointer-events: none;
-      }
-    </style>
-    <script type="module">
-      const examples = [
-        'basic',
-        'same-camera',
-        '3d-model',
-        'orthographic-camera',
-        'transparency',
-        'envmap',
-        'multiple-projections',
-        'instancing',
-        'multiple-projections-instancing',
-        'video',
-      ]
+			#cover-canvas {
+				position: absolute;
+				top: 2rem;
+				left: 0;
+				outline: none;
+				pointer-events: none;
+			}
+		</style>
 
-      function exampleTemplate(name) {
-        const readableName = capitalize(name.replace(/-/g, ' '))
+		<script async src="//ga.jspm.io/npm:es-module-shims@1.5.4/dist/es-module-shims.js"></script>
 
-        return `
-          <div>
-            <a href="${name}"><img src="screenshots/${name}.png" /></a>
-            <div class="didascalia">
-              <a href="${name}" class="title-link">${readableName}</a>
-              <a
-                href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/${name}.html"
-                target="_blank"
-                >(source)</a
-              >
-            </div>
-          </div>
-        `
-      }
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://unpkg.com/three@^0.139.0/src/Three.js",
+					"three/": "https://unpkg.com/three@^0.139.0/"
+				}
+			}
+		</script>
 
-      // generate and add the examples to the DOM
-      const examplesContainer = document.querySelector('.examples')
-      examples.forEach((example) => {
-        const exampleNode = createElementFromHTML(exampleTemplate(example))
-        examplesContainer.appendChild(exampleNode)
-      })
+		<script type="module">
+			import {TextureLoader} from 'three/src/loaders/TextureLoader.js'
+			import {Mesh} from 'three/src/objects/Mesh.js'
+			import {RoundedBoxGeometry} from './lib/RoundedBoxGeometry.js'
+			import {Object3D} from 'three/src/core/Object3D.js'
+			import {Quaternion} from 'three/src/math/Quaternion.js'
+			import {SpotLight} from 'three/src/lights/SpotLight.js'
+			import {AmbientLight} from 'three/src/lights/AmbientLight.js'
+			import * as eases from 'https://unpkg.com/eases-jsnext@1.0.10/dist/eases.es.js'
+			import WebGLApp from './lib/WebGLApp.js'
+			import {ProjectedMaterial} from './lib/ProjectedMaterial.js'
 
-      function createElementFromHTML(htmlString) {
-        const div = document.createElement('div')
-        div.innerHTML = htmlString.trim()
-        return div.firstChild
-      }
+			const examples = [
+				'basic',
+				'same-camera',
+				'3d-model',
+				'orthographic-camera',
+				'transparency',
+				'envmap',
+				'multiple-projections',
+				'instancing',
+				'multiple-projections-instancing',
+				'video',
+			]
 
-      function capitalize(string) {
-        return string.charAt(0).toUpperCase() + string.slice(1)
-      }
-    </script>
-    <script type="module">
-      import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js'
-      import { RoundedBoxGeometry } from 'https://unpkg.com/three@0.126.1/examples/jsm/geometries/RoundedBoxGeometry.js'
-      import * as eases from 'https://unpkg.com/eases-jsnext@1.0.10/dist/eases.es.js'
-      import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
+			function exampleTemplate(name) {
+				const readableName = capitalize(name.replace(/-/g, ' '))
 
-      function clamp01(value) {
-        return Math.min(Math.max(value, 0), 1)
-      }
+				return /*html*/ `
+					<div>
+						<a href="${name}"><img src="screenshots/${name}.png" /></a>
+						<div class="didascalia">
+							<a href="${name}" class="title-link">${readableName}</a>
+							<a
+								href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/${name}.html"
+								target="_blank"
+								>(source)</a
+							>
+						</div>
+					</div>
+				`
+			}
 
-      // grab our canvas
-      const canvas = document.querySelector('#cover-canvas')
+			// generate and add the examples to the DOM
+			const examplesContainer = document.querySelector('.examples')
+			examples.forEach(example => {
+				const exampleNode = createElementFromHTML(exampleTemplate(example))
+				examplesContainer.appendChild(exampleNode)
+			})
 
-      // WebGLApp is a really basic wrapper around the three.js setup,
-      // it hides all unnecessary stuff not related to this example
-      const webgl = new WebGLApp({
-        canvas,
-        // set the scene background alpha
-        backgroundAlpha: 0,
-        // give it aa fixed height
-        height: 350,
-      })
+			function createElementFromHTML(htmlString) {
+				const div = document.createElement('div')
+				div.innerHTML = htmlString.trim()
+				return div.firstChild
+			}
 
-      // attach it to the window to inspect in the console
-      window.webgl = webgl
+			function capitalize(string) {
+				return string.charAt(0).toUpperCase() + string.slice(1)
+			}
 
-      const size = 1.8
-      const geometry = new RoundedBoxGeometry(size, size, size, 3, 0.04)
+			function clamp01(value) {
+				return Math.min(Math.max(value, 0), 1)
+			}
 
-      // load the textures
-      const textures = [
-        new THREE.TextureLoader().load('./images/three-projected-material-1.png'),
-        new THREE.TextureLoader().load('./images/three-projected-material-2.png'),
-        new THREE.TextureLoader().load('./images/three-projected-material-3.png'),
-        new THREE.TextureLoader().load('./images/three-projected-material-4.png'),
-        new THREE.TextureLoader().load('./images/three-projected-material-5.png'),
-        new THREE.TextureLoader().load('./images/three-projected-material-6.png'),
-      ]
+			// grab our canvas
+			const canvas = document.querySelector('#cover-canvas')
 
-      // https://threejs.org/examples/#webgl_materials_texture_anisotropy
-      textures.forEach((texture) => {
-        texture.anisotropy = webgl.renderer.capabilities.getMaxAnisotropy()
-      })
+			// WebGLApp is a really basic wrapper around the three.js setup,
+			// it hides all unnecessary stuff not related to this example
+			const webgl = new WebGLApp({
+				canvas,
+				// set the scene background alpha
+				backgroundAlpha: 0,
+				// give it aa fixed height
+				height: 350,
+			})
 
-      // make an array of materials with the same texture
-      const materials = []
-      for (let i = 0; i < textures.length; i++) {
-        const material = new ProjectedMaterial({
-          camera: webgl.camera,
-          texture: textures[i],
-          color: 'ghostwhite',
-          textureScale: 0.65,
-          transparent: true, // needed for multiple materials
-          roughness: 0.1,
-          clearcoat: 1,
-        })
+			// attach it to the window to inspect in the console
+			window.webgl = webgl
 
-        materials.push(material)
+			const size = 1.8
+			const geometry = new RoundedBoxGeometry(size, size, size, 3, 0.04)
 
-        // reserve a group for the material on the geometry
-        // https://stackoverflow.com/a/49708915
-        geometry.addGroup(0, Infinity, i)
-      }
+			// load the textures
+			const textures = [
+				new TextureLoader().load('./images/three-projected-material-1.png'),
+				new TextureLoader().load('./images/three-projected-material-2.png'),
+				new TextureLoader().load('./images/three-projected-material-3.png'),
+				new TextureLoader().load('./images/three-projected-material-4.png'),
+				new TextureLoader().load('./images/three-projected-material-5.png'),
+				new TextureLoader().load('./images/three-projected-material-6.png'),
+			]
 
-      // create the mesh with the projected materials
-      const mesh = new THREE.Mesh(geometry, materials)
-      webgl.scene.add(mesh)
+			// https://threejs.org/examples/#webgl_materials_texture_anisotropy
+			textures.forEach(texture => {
+				texture.anisotropy = webgl.renderer.capabilities.getMaxAnisotropy()
+			})
 
-      const rotations = [
-        (m) => m.rotateY(-Math.PI / 2),
-        (m) => m.rotateZ(Math.PI / 2),
-        (m) => m.rotateZ(Math.PI / 2),
-        (m) => m.rotateY(Math.PI / 2),
-        (m) => m.rotateX(-Math.PI / 2),
-        (m) => m.rotateX(-Math.PI / 2),
-      ]
+			// make an array of materials with the same texture
+			const materials = []
+			for (let i = 0; i < textures.length; i++) {
+				const material = new ProjectedMaterial({
+					camera: webgl.camera,
+					texture: textures[i],
+					color: 'ghostwhite',
+					textureScale: 0.65,
+					transparent: true, // needed for multiple materials
+					roughness: 0.1,
+					clearcoat: 1,
+				})
 
-      // project the textures
-      rotations.forEach((rotate, i) => {
-        rotate(mesh)
-        mesh.material[i].project(mesh)
-      })
+				materials.push(material)
 
-      // reset the rotation
-      mesh.quaternion.identity()
+				// reserve a group for the material on the geometry
+				// https://stackoverflow.com/a/49708915
+				geometry.addGroup(0, Infinity, i)
+			}
 
-      // animate the cube
-      const INTERVAL_TIME = 3 // seconds
-      const ANIMATION_TIME = 2.5 // seconds
-      const targetMesh = new THREE.Object3D()
-      let counter = 0
-      const startQuaternion = new THREE.Quaternion()
-      let startTime = webgl.time
-      rotations[counter](targetMesh)
-      counter++
-      setInterval(() => {
-        startQuaternion.copy(targetMesh.quaternion)
-        rotations[counter](targetMesh)
-        counter = (counter + 1) % rotations.length
-        startTime = webgl.time
-      }, INTERVAL_TIME * 1000)
+			// create the mesh with the projected materials
+			const mesh = new Mesh(geometry, materials)
+			webgl.scene.add(mesh)
 
-      webgl.onUpdate((dt, time) => {
-        const t = clamp01((time - startTime) / ANIMATION_TIME)
-        mesh.quaternion.copy(startQuaternion).slerp(targetMesh.quaternion, eases.elasticOut(t))
-      })
+			const rotations = [
+				m => m.rotateY(-Math.PI / 2),
+				m => m.rotateZ(Math.PI / 2),
+				m => m.rotateZ(Math.PI / 2),
+				m => m.rotateY(Math.PI / 2),
+				m => m.rotateX(-Math.PI / 2),
+				m => m.rotateX(-Math.PI / 2),
+			]
 
-      // add lights
-      const spotLight = new THREE.SpotLight(0xffffff, 4, 40, Math.PI / 4, 1)
-      spotLight.position.set(20, 20, 15)
-      spotLight.lookAt(0, 0, 0)
-      webgl.scene.add(spotLight)
+			// project the textures
+			rotations.forEach((rotate, i) => {
+				rotate(mesh)
+				mesh.material[i].project(mesh)
+			})
 
-      const spotLight2 = new THREE.SpotLight(0xffffff, 4, 40, Math.PI / 4, 1)
-      spotLight2.position.set(-10, -3, -3)
-      spotLight2.lookAt(0, 0, 0)
-      webgl.scene.add(spotLight2)
+			// reset the rotation
+			mesh.quaternion.identity()
 
-      // const spotLight3 = new THREE.SpotLight(0xffffff, 0.3, 40, Math.PI / 4, 1)
-      // spotLight3.position.set(5, -5, 5)
-      // spotLight3.lookAt(0, 0, size / 2)
-      // webgl.scene.add(spotLight3)
+			// animate the cube
+			const INTERVAL_TIME = 3 // seconds
+			const ANIMATION_TIME = 2.5 // seconds
+			const targetMesh = new Object3D()
+			let counter = 0
+			const startQuaternion = new Quaternion()
+			let startTime = webgl.time
+			rotations[counter](targetMesh)
+			counter++
+			setInterval(() => {
+				startQuaternion.copy(targetMesh.quaternion)
+				rotations[counter](targetMesh)
+				counter = (counter + 1) % rotations.length
+				startTime = webgl.time
+			}, INTERVAL_TIME * 1000)
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
-      webgl.scene.add(ambientLight)
+			webgl.onUpdate((dt, time) => {
+				const t = clamp01((time - startTime) / ANIMATION_TIME)
+				mesh.quaternion.copy(startQuaternion).slerp(targetMesh.quaternion, eases.elasticOut(t))
+			})
 
-      // start animation loop
-      webgl.start()
-    </script>
-  </head>
-  <body>
-    <div class="cover">
-      <canvas id="cover-canvas"></canvas>
-      <h1>three-projected-material</h1>
-      <p>
-        Three.js Material which lets you do
-        <a href="https://en.wikipedia.org/wiki/Projective_texture_mapping" target="_blank"
-          >Texture Projection</a
-        >
-        on a 3d Model.
-      </p>
-    </div>
-    <div class="container">
-      <h2>Documentation</h2>
-      <a href="https://github.com/marcofugaro/three-projected-material">Documentation on GitHub</a>
-      <h2>Examples</h2>
+			// add lights
+			const spotLight = new SpotLight(0xffffff, 4, 40, Math.PI / 4, 1)
+			spotLight.position.set(20, 20, 15)
+			spotLight.lookAt(0, 0, 0)
+			webgl.scene.add(spotLight)
 
-      <div class="examples grid">
-        <!-- THIS WILL BE POPULATED BY JS -->
-      </div>
-    </div>
-  </body>
+			const spotLight2 = new SpotLight(0xffffff, 4, 40, Math.PI / 4, 1)
+			spotLight2.position.set(-10, -3, -3)
+			spotLight2.lookAt(0, 0, 0)
+			webgl.scene.add(spotLight2)
+
+			// const spotLight3 = new SpotLight(0xffffff, 0.3, 40, Math.PI / 4, 1)
+			// spotLight3.position.set(5, -5, 5)
+			// spotLight3.lookAt(0, 0, size / 2)
+			// webgl.scene.add(spotLight3)
+
+			const ambientLight = new AmbientLight(0xffffff, 0.4)
+			webgl.scene.add(ambientLight)
+
+			// start animation loop
+			webgl.start()
+		</script>
+	</head>
+	<body>
+		<div class="cover">
+			<canvas id="cover-canvas"></canvas>
+			<h1>three-projected-material</h1>
+			<p>
+				Three.js Material which lets you do
+				<a href="https://en.wikipedia.org/wiki/Projective_texture_mapping" target="_blank"
+					>Texture Projection</a
+				>
+				on a 3d Model.
+			</p>
+		</div>
+		<div class="container">
+			<h2>Documentation</h2>
+			<a href="https://github.com/marcofugaro/three-projected-material">Documentation on GitHub</a>
+			<h2>Examples</h2>
+
+			<div class="examples grid">
+				<!-- THIS WILL BE POPULATED BY JS -->
+			</div>
+		</div>
+	</body>
 </html>

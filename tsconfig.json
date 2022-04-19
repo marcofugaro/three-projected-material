@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"noUnusedLocals": true,
+		"importsNotUsedAsValues": "error",
+
+		"target": "ES2022",
+		"module": "ESNext",
+
+		"outDir": "./dist",
+		"declaration": true,
+		"moduleResolution": "Node"
+	},
+	"include": ["./src/**/*"]
+}

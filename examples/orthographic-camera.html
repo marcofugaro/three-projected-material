@@ -1,99 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Orthographic camera example - three-projected-material</title>
-    <link rel="stylesheet" href="css/style.css" type="text/css" />
-  </head>
-  <body>
-    <canvas id="app"></canvas>
-    <a
-      class="source-fab"
-      target="_blank"
-      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/orthographic-camera.html"
-      title="View source code on GitHub"
-    >
-      <img src="images/source.svg" />
-    </a>
-    <p class="title white">
-      Inspired by <a href="https://github.com/juanuys" target="_blank">@juanuys</a>
-    </p>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Orthographic camera example - three-projected-material</title>
+		<link rel="stylesheet" href="css/style.css" type="text/css" />
+	</head>
+	<body>
+		<canvas id="app"></canvas>
+		<a
+			class="source-fab"
+			target="_blank"
+			href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/orthographic-camera.html"
+			title="View source code on GitHub"
+		>
+			<img src="images/source.svg" />
+		</a>
+		<p class="title white">
+			Inspired by <a href="https://github.com/juanuys" target="_blank">@juanuys</a>
+		</p>
 
-    <script type="module">
-      import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js'
-      import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
-      import { random } from './lib/math-utils.js'
+		<script async src="//ga.jspm.io/npm:es-module-shims@1.5.4/dist/es-module-shims.js"></script>
 
-      // grab our canvas
-      const canvas = document.querySelector('#app')
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://unpkg.com/three@^0.139.0/src/Three.js",
+					"three/": "https://unpkg.com/three@^0.139.0/"
+				}
+			}
+		</script>
 
-      // WebGLApp is a really basic wrapper around the three.js setup,
-      // it hides all unnecessary stuff not related to this example
-      const webgl = new WebGLApp({
-        canvas,
-        // set the scene background color
-        background: '#111',
-        // show the fps counter from stats.js
-        showFps: true,
-        // enable orbit-controls
-        orbitControls: true,
-        // create an ortographic camera,
-        // it will be exposed as webgl.camera
-        orthographic: true,
-      })
+		<script type="module">
+			import {TextureLoader} from 'three/src/loaders/TextureLoader.js'
+			import {Group} from 'three/src/objects/Group.js'
+			import {BoxGeometry} from 'three/src/geometries/BoxGeometry.js'
+			import {Mesh} from 'three/src/objects/Mesh.js'
+			import {DirectionalLight} from 'three/src/lights/DirectionalLight.js'
+			import {AmbientLight} from 'three/src/lights/AmbientLight.js'
+			import WebGLApp from './lib/WebGLApp.js'
+			import {ProjectedMaterial} from './lib/ProjectedMaterial.js'
+			import {random} from './lib/math-utils.js'
 
-      // attach it to the window to inspect in the console
-      window.webgl = webgl
+			// grab our canvas
+			const canvas = document.querySelector('#app')
 
-      // load the example texture
-      const texture = new THREE.TextureLoader().load('./images/charles-unsplash.jpg')
+			// WebGLApp is a really basic wrapper around the three.js setup,
+			// it hides all unnecessary stuff not related to this example
+			const webgl = new WebGLApp({
+				canvas,
+				// set the scene background color
+				background: '#111',
+				// show the fps counter from stats.js
+				showFps: true,
+				// enable orbit-controls
+				orbitControls: true,
+				// create an ortographic camera,
+				// it will be exposed as webgl.camera
+				orthographic: true,
+			})
 
-      // create a bunch of meshes
-      const elements = new THREE.Group()
-      const NUM_ELEMENTS = 130
-      for (let i = 0; i < NUM_ELEMENTS; i++) {
-        const geometry = new THREE.BoxGeometry(random(0.1, 0.5), random(0.1, 0.5), random(0.1, 0.5))
-        // create a different material for different objects
-        // since each one will have a different position
-        const material = new ProjectedMaterial({
-          // use the orthographic camera
-          camera: webgl.camera,
-          texture,
-          color: '#1c1c1c',
-          textureScale: 0.8,
-        })
-        const element = new THREE.Mesh(geometry, material)
+			// attach it to the window to inspect in the console
+			window.webgl = webgl
 
-        // move the meshes any way you want!
-        element.position.x = random(-1, 1)
-        element.position.y = random(-1, 1)
-        element.position.z = random(-1, 1)
+			// load the example texture
+			const texture = new TextureLoader().load('./images/charles-unsplash.jpg')
 
-        // and when you're ready project the texture!
-        material.project(element)
+			// create a bunch of meshes
+			const elements = new Group()
+			const NUM_ELEMENTS = 130
+			for (let i = 0; i < NUM_ELEMENTS; i++) {
+				const geometry = new BoxGeometry(random(0.1, 0.5), random(0.1, 0.5), random(0.1, 0.5))
+				// create a different material for different objects
+				// since each one will have a different position
+				const material = new ProjectedMaterial({
+					// use the orthographic camera
+					camera: webgl.camera,
+					texture,
+					color: '#1c1c1c',
+					textureScale: 0.8,
+				})
+				const element = new Mesh(geometry, material)
 
-        elements.add(element)
-      }
+				// move the meshes any way you want!
+				element.position.x = random(-1, 1)
+				element.position.y = random(-1, 1)
+				element.position.z = random(-1, 1)
 
-      webgl.scene.add(elements)
+				// and when you're ready project the texture!
+				material.project(element)
 
-      // move the camera so it's not facing the
-      // texture straight on at the start
-      webgl.camera.position.set(-10, 5, 10)
-      webgl.camera.lookAt(0, 0, 0)
+				elements.add(element)
+			}
 
-      // add lights
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
-      directionalLight.position.set(0, 10, 10)
-      webgl.scene.add(directionalLight)
+			webgl.scene.add(elements)
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-      webgl.scene.add(ambientLight)
+			// move the camera so it's not facing the
+			// texture straight on at the start
+			webgl.camera.position.set(-10, 5, 10)
+			webgl.camera.lookAt(0, 0, 0)
 
-      // start animation loop
-      webgl.start()
-    </script>
-  </body>
+			// add lights
+			const directionalLight = new DirectionalLight(0xffffff, 0.6)
+			directionalLight.position.set(0, 10, 10)
+			webgl.scene.add(directionalLight)
+
+			const ambientLight = new AmbientLight(0xffffff, 0.6)
+			webgl.scene.add(ambientLight)
+
+			// start animation loop
+			webgl.start()
+		</script>
+	</body>
 </html>

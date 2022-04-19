@@ -1,89 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Model example - three-projected-material</title>
-    <link rel="stylesheet" href="css/style.css" type="text/css" />
-  </head>
-  <body>
-    <canvas id="app"></canvas>
-    <a
-      class="source-fab"
-      target="_blank"
-      href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/3d-model.html"
-      title="View source code on GitHub"
-    >
-      <img src="images/source.svg" />
-    </a>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>3D Model example - three-projected-material</title>
+		<link rel="stylesheet" href="css/style.css" type="text/css" />
+	</head>
+	<body>
+		<canvas id="app"></canvas>
+		<a
+			class="source-fab"
+			target="_blank"
+			href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/3d-model.html"
+			title="View source code on GitHub"
+		>
+			<img src="images/source.svg" />
+		</a>
 
-    <script type="module">
-      import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js'
-      import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
-      import { loadGltf, extractGeometry } from './lib/three-utils.js'
+		<script async src="//ga.jspm.io/npm:es-module-shims@1.5.4/dist/es-module-shims.js"></script>
 
-      // grab our canvas
-      const canvas = document.querySelector('#app')
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://unpkg.com/three@^0.139.0/src/Three.js",
+					"three/": "https://unpkg.com/three@^0.139.0/"
+				}
+			}
+		</script>
 
-      // WebGLApp is a really basic wrapper around the three.js setup,
-      // it hides all unnecessary stuff not related to this example
-      const webgl = new WebGLApp({
-        canvas,
-        // set the scene background color
-        background: '#E6E6E6',
-        // show the fps counter from stats.js
-        showFps: true,
-        // enable orbit-controls
-        orbitControls: true,
-      })
+		<script type="module">
+			import {TextureLoader} from 'three/src/loaders/TextureLoader.js'
+			import {Mesh} from 'three/src/objects/Mesh.js'
+			import {DirectionalLight} from 'three/src/lights/DirectionalLight.js'
+			import {AmbientLight} from 'three/src/lights/AmbientLight.js'
+			import WebGLApp from './lib/WebGLApp.js'
+			import {ProjectedMaterial} from './lib/ProjectedMaterial.js'
+			import {loadGltf, extractGeometry} from './lib/utils.js'
 
-      // attach it to the window to inspect in the console
-      window.webgl = webgl
+			// grab our canvas
+			const canvas = document.querySelector('#app')
 
-      init()
+			// WebGLApp is a really basic wrapper around the three.js setup,
+			// it hides all unnecessary stuff not related to this example
+			const webgl = new WebGLApp({
+				canvas,
+				// set the scene background color
+				background: '#E6E6E6',
+				// show the fps counter from stats.js
+				showFps: true,
+				// enable orbit-controls
+				orbitControls: true,
+			})
 
-      async function init() {
-        // load the model and extract the geometry from it
-        const gltf = await loadGltf('./models/suzanne.gltf')
-        const geometry = extractGeometry(gltf.scene)
+			// attach it to the window to inspect in the console
+			window.webgl = webgl
 
-        // load the example texture
-        const texture = new THREE.TextureLoader().load('./images/uv.jpg')
+			init()
 
-        // create the mesh with the projected material
-        const material = new ProjectedMaterial({
-          camera: webgl.camera,
-          texture,
-          color: '#ccc',
-          textureScale: 0.8,
-        })
-        const mesh = new THREE.Mesh(geometry, material)
-        webgl.scene.add(mesh)
+			async function init() {
+				// load the model and extract the geometry from it
+				const gltf = await loadGltf('./models/suzanne.gltf')
+				const geometry = extractGeometry(gltf.scene)
 
-        // move the mesh any way you want!
-        // (in this case no translations/rotations)
+				// load the example texture
+				const texture = new TextureLoader().load('./images/uv.jpg')
 
-        // and when you're ready project the texture!
-        material.project(mesh)
+				// create the mesh with the projected material
+				const material = new ProjectedMaterial({
+					camera: webgl.camera,
+					texture,
+					color: '#ccc',
+					textureScale: 0.8,
+				})
+				const mesh = new Mesh(geometry, material)
+				webgl.scene.add(mesh)
 
-        // rotate for demo purposes
-        mesh.rotation.y = Math.PI / 3
-        webgl.onUpdate(() => {
-          mesh.rotation.y -= 0.003
-        })
+				// move the mesh any way you want!
+				webgl.onUpdate(dt => {
+					mesh.rotation.y -= dt * 0.5
+				})
 
-        // add lights
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
-        directionalLight.position.set(0, 10, 10)
-        webgl.scene.add(directionalLight)
+				// and when you're ready project the texture!
+				material.project(mesh)
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-        webgl.scene.add(ambientLight)
+				// add lights
+				const directionalLight = new DirectionalLight(0xffffff, 0.6)
+				directionalLight.position.set(0, 10, 10)
+				webgl.scene.add(directionalLight)
 
-        // start animation loop
-        webgl.start()
-      }
-    </script>
-  </body>
+				const ambientLight = new AmbientLight(0xffffff, 0.6)
+				webgl.scene.add(ambientLight)
+
+				// start animation loop
+				webgl.start()
+			}
+		</script>
+	</body>
 </html>
