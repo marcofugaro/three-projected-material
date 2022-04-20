@@ -14,12 +14,13 @@ function _classPrivateFieldLooseBase(receiver, privateKey) {
   return receiver;
 }
 
-function monkeyPatch(shader, {
-  defines = '',
-  header = '',
-  main = '',
-  ...replaces
-}) {
+function monkeyPatch(shader, _ref) {
+  let {
+    defines = '',
+    header = '',
+    main = '',
+    ...replaces
+  } = _ref;
   let patchedShader = shader;
 
   const replaceAll = (str, find, rep) => str.split(find).join(rep);
@@ -94,11 +95,11 @@ function getTexelDecodingFunction(functionName, encoding) {
   `;
 }
 
-var _camera = _classPrivateFieldLooseKey("camera");
+var _camera = /*#__PURE__*/_classPrivateFieldLooseKey("camera");
 
-var _cover = _classPrivateFieldLooseKey("cover");
+var _cover = /*#__PURE__*/_classPrivateFieldLooseKey("cover");
 
-var _textureScale = _classPrivateFieldLooseKey("textureScale");
+var _textureScale = /*#__PURE__*/_classPrivateFieldLooseKey("textureScale");
 
 class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   // internal values... they are exposed via getters
@@ -164,14 +165,16 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     this.saveDimensions();
   }
 
-  constructor({
-    camera = new THREE.PerspectiveCamera(),
-    texture = new THREE.Texture(),
-    textureScale = 1,
-    textureOffset = new THREE.Vector2(),
-    cover = false,
-    ...options
-  } = {}) {
+  constructor(_temp) {
+    let {
+      camera = new THREE.PerspectiveCamera(),
+      texture = new THREE.Texture(),
+      textureScale = 1,
+      textureOffset = new THREE.Vector2(),
+      cover = false,
+      ...options
+    } = _temp === void 0 ? {} : _temp;
+
     if (!texture.isTexture) {
       throw new Error('Invalid texture passed to the ProjectedMaterial');
     }
@@ -443,9 +446,11 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     this.saveCameraMatrices();
   }
 
-  projectInstanceAt(index, instancedMesh, matrixWorld, {
-    forceCameraSave = false
-  } = {}) {
+  projectInstanceAt(index, instancedMesh, matrixWorld, _temp2) {
+    let {
+      forceCameraSave = false
+    } = _temp2 === void 0 ? {} : _temp2;
+
     if (!instancedMesh.isInstancedMesh) {
       throw new Error(`The provided mesh is not an InstancedMesh`);
     }
@@ -561,5 +566,4 @@ function allocateProjectionData(geometry, instancesCount) {
   geometry.setAttribute(`savedModelMatrix3`, new THREE.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
 }
 
-export default ProjectedMaterial;
-export { allocateProjectionData };
+export { allocateProjectionData, ProjectedMaterial as default };

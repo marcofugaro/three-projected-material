@@ -2,7 +2,7 @@
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('three')) :
   typeof define === 'function' && define.amd ? define(['exports', 'three'], factory) :
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.projectedMaterial = {}, global.THREE));
-}(this, (function (exports, THREE) { 'use strict';
+})(this, (function (exports, THREE) { 'use strict';
 
   function _interopNamespace(e) {
     if (e && e.__esModule) return e;
@@ -13,14 +13,12 @@
           var d = Object.getOwnPropertyDescriptor(e, k);
           Object.defineProperty(n, k, d.get ? d : {
             enumerable: true,
-            get: function () {
-              return e[k];
-            }
+            get: function () { return e[k]; }
           });
         }
       });
     }
-    n['default'] = e;
+    n["default"] = e;
     return Object.freeze(n);
   }
 
@@ -40,12 +38,13 @@
     return receiver;
   }
 
-  function monkeyPatch(shader, {
-    defines = '',
-    header = '',
-    main = '',
-    ...replaces
-  }) {
+  function monkeyPatch(shader, _ref) {
+    let {
+      defines = '',
+      header = '',
+      main = '',
+      ...replaces
+    } = _ref;
     let patchedShader = shader;
 
     const replaceAll = (str, find, rep) => str.split(find).join(rep);
@@ -120,11 +119,11 @@
   `;
   }
 
-  var _camera = _classPrivateFieldLooseKey("camera");
+  var _camera = /*#__PURE__*/_classPrivateFieldLooseKey("camera");
 
-  var _cover = _classPrivateFieldLooseKey("cover");
+  var _cover = /*#__PURE__*/_classPrivateFieldLooseKey("cover");
 
-  var _textureScale = _classPrivateFieldLooseKey("textureScale");
+  var _textureScale = /*#__PURE__*/_classPrivateFieldLooseKey("textureScale");
 
   class ProjectedMaterial extends THREE__namespace.MeshPhysicalMaterial {
     // internal values... they are exposed via getters
@@ -190,14 +189,16 @@
       this.saveDimensions();
     }
 
-    constructor({
-      camera = new THREE__namespace.PerspectiveCamera(),
-      texture = new THREE__namespace.Texture(),
-      textureScale = 1,
-      textureOffset = new THREE__namespace.Vector2(),
-      cover = false,
-      ...options
-    } = {}) {
+    constructor(_temp) {
+      let {
+        camera = new THREE__namespace.PerspectiveCamera(),
+        texture = new THREE__namespace.Texture(),
+        textureScale = 1,
+        textureOffset = new THREE__namespace.Vector2(),
+        cover = false,
+        ...options
+      } = _temp === void 0 ? {} : _temp;
+
       if (!texture.isTexture) {
         throw new Error('Invalid texture passed to the ProjectedMaterial');
       }
@@ -469,9 +470,11 @@
       this.saveCameraMatrices();
     }
 
-    projectInstanceAt(index, instancedMesh, matrixWorld, {
-      forceCameraSave = false
-    } = {}) {
+    projectInstanceAt(index, instancedMesh, matrixWorld, _temp2) {
+      let {
+        forceCameraSave = false
+      } = _temp2 === void 0 ? {} : _temp2;
+
       if (!instancedMesh.isInstancedMesh) {
         throw new Error(`The provided mesh is not an InstancedMesh`);
       }
@@ -588,8 +591,8 @@
   }
 
   exports.allocateProjectionData = allocateProjectionData;
-  exports.default = ProjectedMaterial;
+  exports["default"] = ProjectedMaterial;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));
