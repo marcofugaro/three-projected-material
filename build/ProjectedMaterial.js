@@ -76,47 +76,6 @@
         return callback(texture);
       }
     }, 16);
-  } // https://github.com/mrdoob/three.js/blob/3c60484ce033e0dc2d434ce0eb89fc1f59d57d65/src/renderers/webgl/WebGLProgram.js#L22-L48s
-
-  function getEncodingComponents(encoding) {
-    switch (encoding) {
-      case THREE__namespace.LinearEncoding:
-        return ['Linear', '( value )'];
-
-      case THREE__namespace.sRGBEncoding:
-        return ['sRGB', '( value )'];
-
-      case THREE__namespace.RGBEEncoding:
-        return ['RGBE', '( value )'];
-
-      case THREE__namespace.RGBM7Encoding:
-        return ['RGBM', '( value, 7.0 )'];
-
-      case THREE__namespace.RGBM16Encoding:
-        return ['RGBM', '( value, 16.0 )'];
-
-      case THREE__namespace.RGBDEncoding:
-        return ['RGBD', '( value, 256.0 )'];
-
-      case THREE__namespace.GammaEncoding:
-        return ['Gamma', '( value, float( GAMMA_FACTOR ) )'];
-
-      case THREE__namespace.LogLuvEncoding:
-        return ['LogLuv', '( value )'];
-
-      default:
-        console.warn('THREE.WebGLProgram: Unsupported encoding:', encoding);
-        return ['Linear', '( value )'];
-    }
-  } // https://github.com/mrdoob/three.js/blob/3c60484ce033e0dc2d434ce0eb89fc1f59d57d65/src/renderers/webgl/WebGLProgram.js#L66-L71
-
-  function getTexelDecodingFunction(functionName, encoding) {
-    const components = getEncodingComponents(encoding);
-    return `
-    vec4 ${functionName}(vec4 value) {
-      return ${components[0]}ToLinear${components[1]};
-    }
-  `;
   }
 
   var _camera = /*#__PURE__*/_classPrivateFieldLooseKey("camera");
@@ -151,7 +110,6 @@
 
       this.uniforms.projectedTexture.value = texture;
       this.uniforms.isTextureLoaded.value = Boolean(texture.image);
-      this.projectedTexelToLinear = getTexelDecodingFunction('projectedTexelToLinear', texture.encoding);
 
       if (!this.uniforms.isTextureLoaded) {
         addLoadListener(texture, () => {
@@ -228,9 +186,7 @@
       _classPrivateFieldLooseBase(this, _cover)[_cover] = cover;
       _classPrivateFieldLooseBase(this, _textureScale)[_textureScale] = textureScale; // scale to keep the image proportions and apply textureScale
 
-      const [widthScaled, heightScaled] = computeScaledDimensions(texture, camera, textureScale, cover); // apply encoding based on provided texture
-
-      this.projectedTexelToLinear = getTexelDecodingFunction('projectedTexelToLinear', texture.encoding);
+      const [widthScaled, heightScaled] = computeScaledDimensions(texture, camera, textureScale, cover);
       this.uniforms = {
         projectedTexture: {
           value: texture
@@ -347,8 +303,6 @@
           varying vec4 vWorldPosition;
           #endif
 
-          ${this.projectedTexelToLinear}
-
           float mapRange(float value, float min1, float max1, float min2, float max2) {
             return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
           }
@@ -384,9 +338,6 @@
 
           if (isFacingProjector && isInTexture && isTextureLoaded && isTextureProjected) {
             vec4 textureColor = texture2D(projectedTexture, uv);
-
-            // apply the enccoding from the texture
-            textureColor = projectedTexelToLinear(textureColor);
 
             // apply the material opacity
             textureColor.a *= opacity;

@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { monkeyPatch, addLoadListener, getTexelDecodingFunction } from './three-utils'
+import { monkeyPatch, addLoadListener } from './three-utils'
 
 export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   // internal values... they are exposed via getters
@@ -30,11 +30,6 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
     this.uniforms.projectedTexture.value = texture
     this.uniforms.isTextureLoaded.value = Boolean(texture.image)
-
-    this.projectedTexelToLinear = getTexelDecodingFunction(
-      'projectedTexelToLinear',
-      texture.encoding
-    )
 
     if (!this.uniforms.isTextureLoaded) {
       addLoadListener(texture, () => {
@@ -101,12 +96,6 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       camera,
       textureScale,
       cover
-    )
-
-    // apply encoding based on provided texture
-    this.projectedTexelToLinear = getTexelDecodingFunction(
-      'projectedTexelToLinear',
-      texture.encoding
     )
 
     this.uniforms = {
@@ -196,8 +185,6 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
           varying vec4 vWorldPosition;
           #endif
 
-          ${this.projectedTexelToLinear}
-
           float mapRange(float value, float min1, float max1, float min2, float max2) {
             return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
           }
@@ -231,9 +218,6 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
           if (isFacingProjector && isInTexture && isTextureLoaded && isTextureProjected) {
             vec4 textureColor = texture2D(projectedTexture, uv);
-
-            // apply the enccoding from the texture
-            textureColor = projectedTexelToLinear(textureColor);
 
             // apply the material opacity
             textureColor.a *= opacity;
