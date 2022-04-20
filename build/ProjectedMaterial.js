@@ -2,7 +2,7 @@
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('three')) :
   typeof define === 'function' && define.amd ? define(['exports', 'three'], factory) :
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.projectedMaterial = {}, global.THREE));
-}(this, (function (exports, THREE) { 'use strict';
+})(this, (function (exports, THREE) { 'use strict';
 
   function _interopNamespace(e) {
     if (e && e.__esModule) return e;
@@ -13,14 +13,12 @@
           var d = Object.getOwnPropertyDescriptor(e, k);
           Object.defineProperty(n, k, d.get ? d : {
             enumerable: true,
-            get: function () {
-              return e[k];
-            }
+            get: function () { return e[k]; }
           });
         }
       });
     }
-    n['default'] = e;
+    n["default"] = e;
     return Object.freeze(n);
   }
 
@@ -40,12 +38,13 @@
     return receiver;
   }
 
-  function monkeyPatch(shader, {
-    defines = '',
-    header = '',
-    main = '',
-    ...replaces
-  }) {
+  function monkeyPatch(shader, _ref) {
+    let {
+      defines = '',
+      header = '',
+      main = '',
+      ...replaces
+    } = _ref;
     let patchedShader = shader;
 
     const replaceAll = (str, find, rep) => str.split(find).join(rep);
@@ -77,54 +76,13 @@
         return callback(texture);
       }
     }, 16);
-  } // https://github.com/mrdoob/three.js/blob/3c60484ce033e0dc2d434ce0eb89fc1f59d57d65/src/renderers/webgl/WebGLProgram.js#L22-L48s
-
-  function getEncodingComponents(encoding) {
-    switch (encoding) {
-      case THREE__namespace.LinearEncoding:
-        return ['Linear', '( value )'];
-
-      case THREE__namespace.sRGBEncoding:
-        return ['sRGB', '( value )'];
-
-      case THREE__namespace.RGBEEncoding:
-        return ['RGBE', '( value )'];
-
-      case THREE__namespace.RGBM7Encoding:
-        return ['RGBM', '( value, 7.0 )'];
-
-      case THREE__namespace.RGBM16Encoding:
-        return ['RGBM', '( value, 16.0 )'];
-
-      case THREE__namespace.RGBDEncoding:
-        return ['RGBD', '( value, 256.0 )'];
-
-      case THREE__namespace.GammaEncoding:
-        return ['Gamma', '( value, float( GAMMA_FACTOR ) )'];
-
-      case THREE__namespace.LogLuvEncoding:
-        return ['LogLuv', '( value )'];
-
-      default:
-        console.warn('THREE.WebGLProgram: Unsupported encoding:', encoding);
-        return ['Linear', '( value )'];
-    }
-  } // https://github.com/mrdoob/three.js/blob/3c60484ce033e0dc2d434ce0eb89fc1f59d57d65/src/renderers/webgl/WebGLProgram.js#L66-L71
-
-  function getTexelDecodingFunction(functionName, encoding) {
-    const components = getEncodingComponents(encoding);
-    return `
-    vec4 ${functionName}(vec4 value) {
-      return ${components[0]}ToLinear${components[1]};
-    }
-  `;
   }
 
-  var _camera = _classPrivateFieldLooseKey("camera");
+  var _camera = /*#__PURE__*/_classPrivateFieldLooseKey("camera");
 
-  var _cover = _classPrivateFieldLooseKey("cover");
+  var _cover = /*#__PURE__*/_classPrivateFieldLooseKey("cover");
 
-  var _textureScale = _classPrivateFieldLooseKey("textureScale");
+  var _textureScale = /*#__PURE__*/_classPrivateFieldLooseKey("textureScale");
 
   class ProjectedMaterial extends THREE__namespace.MeshPhysicalMaterial {
     // internal values... they are exposed via getters
@@ -152,7 +110,6 @@
 
       this.uniforms.projectedTexture.value = texture;
       this.uniforms.isTextureLoaded.value = Boolean(texture.image);
-      this.projectedTexelToLinear = getTexelDecodingFunction('projectedTexelToLinear', texture.encoding);
 
       if (!this.uniforms.isTextureLoaded) {
         addLoadListener(texture, () => {
@@ -190,14 +147,16 @@
       this.saveDimensions();
     }
 
-    constructor({
-      camera = new THREE__namespace.PerspectiveCamera(),
-      texture = new THREE__namespace.Texture(),
-      textureScale = 1,
-      textureOffset = new THREE__namespace.Vector2(),
-      cover = false,
-      ...options
-    } = {}) {
+    constructor(_temp) {
+      let {
+        camera = new THREE__namespace.PerspectiveCamera(),
+        texture = new THREE__namespace.Texture(),
+        textureScale = 1,
+        textureOffset = new THREE__namespace.Vector2(),
+        cover = false,
+        ...options
+      } = _temp === void 0 ? {} : _temp;
+
       if (!texture.isTexture) {
         throw new Error('Invalid texture passed to the ProjectedMaterial');
       }
@@ -227,9 +186,7 @@
       _classPrivateFieldLooseBase(this, _cover)[_cover] = cover;
       _classPrivateFieldLooseBase(this, _textureScale)[_textureScale] = textureScale; // scale to keep the image proportions and apply textureScale
 
-      const [widthScaled, heightScaled] = computeScaledDimensions(texture, camera, textureScale, cover); // apply encoding based on provided texture
-
-      this.projectedTexelToLinear = getTexelDecodingFunction('projectedTexelToLinear', texture.encoding);
+      const [widthScaled, heightScaled] = computeScaledDimensions(texture, camera, textureScale, cover);
       this.uniforms = {
         projectedTexture: {
           value: texture
@@ -346,8 +303,6 @@
           varying vec4 vWorldPosition;
           #endif
 
-          ${this.projectedTexelToLinear}
-
           float mapRange(float value, float min1, float max1, float min2, float max2) {
             return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
           }
@@ -383,9 +338,6 @@
 
           if (isFacingProjector && isInTexture && isTextureLoaded && isTextureProjected) {
             vec4 textureColor = texture2D(projectedTexture, uv);
-
-            // apply the enccoding from the texture
-            textureColor = projectedTexelToLinear(textureColor);
 
             // apply the material opacity
             textureColor.a *= opacity;
@@ -469,9 +421,11 @@
       this.saveCameraMatrices();
     }
 
-    projectInstanceAt(index, instancedMesh, matrixWorld, {
-      forceCameraSave = false
-    } = {}) {
+    projectInstanceAt(index, instancedMesh, matrixWorld, _temp2) {
+      let {
+        forceCameraSave = false
+      } = _temp2 === void 0 ? {} : _temp2;
+
       if (!instancedMesh.isInstancedMesh) {
         throw new Error(`The provided mesh is not an InstancedMesh`);
       }
@@ -588,8 +542,8 @@
   }
 
   exports.allocateProjectionData = allocateProjectionData;
-  exports.default = ProjectedMaterial;
+  exports["default"] = ProjectedMaterial;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));

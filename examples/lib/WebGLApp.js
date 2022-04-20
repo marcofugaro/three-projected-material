@@ -1,24 +1,26 @@
 // Taken from https://github.com/marcofugaro/threejs-modern-app/blob/master/src/lib/WebGLApp.js
-import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js'
-import { OrbitControls } from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js'
-import Stats from 'https://unpkg.com/three@0.126.1/examples/jsm/libs/stats.module.js'
-// import CCapture from 'https://unpkg.com/ccapture.js@1.1.0/build/CCapture.all.min.js'
+import * as THREE from 'https://unpkg.com/three@0.139.2/build/three.module.js'
+import { OrbitControls } from 'https://unpkg.com/three@0.139.2/examples/jsm/controls/OrbitControls.js'
+import Stats from 'https://unpkg.com/three@0.139.2/examples/jsm/libs/stats.module.js'
 import { initControls } from './Controls.js'
 
 export default class WebGLApp {
-  _width
-  _height
-  _capturer
+  #width
+  #height
   isRunning = false
   time = 0
   dt = 0
-  _lastTime = performance.now()
-  _updateListeners = []
-  _pointerdownListeners = []
-  _pointermoveListeners = []
-  _pointerupListeners = []
-  _startX
-  _startY
+  #lastTime = performance.now()
+  #updateListeners = []
+  #pointerdownListeners = []
+  #pointermoveListeners = []
+  #pointerupListeners = []
+  #startX
+  #startY
+  #mp4
+  #mp4Encoder
+  #fileName
+  #frames = []
 
   get background() {
     return this.renderer.getClearColor(new THREE.Color())
@@ -28,8 +30,16 @@ export default class WebGLApp {
     return this.renderer.getClearAlpha()
   }
 
+  set background(background) {
+    this.renderer.setClearColor(background, this.backgroundAlpha)
+  }
+
+  set backgroundAlpha(backgroundAlpha) {
+    this.renderer.setClearColor(this.background, backgroundAlpha)
+  }
+
   get isRecording() {
-    return Boolean(this._capturer)
+    return Boolean(this.#mp4Encoder)
   }
 
   constructor({
@@ -39,6 +49,8 @@ export default class WebGLApp {
     frustumSize = 3,
     near = 0.01,
     far = 100,
+    gamma = false,
+    physicallyCorrectLights = false,
     ...options
   } = {}) {
     this.renderer = new THREE.WebGLRenderer({
@@ -52,8 +64,13 @@ export default class WebGLApp {
     if (options.sortObjects !== undefined) {
       this.renderer.sortObjects = options.sortObjects
     }
-    if (options.gamma) {
+    if (gamma) {
+      // enable gamma correction, read more about it here:
+      // https://www.donmccurdy.com/2020/06/17/color-management-in-threejs/
       this.renderer.outputEncoding = THREE.sRGBEncoding
+    }
+    if (physicallyCorrectLights) {
+      this.renderer.physicallyCorrectLights = true
     }
     if (options.xr) {
       this.renderer.xr.enabled = true
@@ -64,8 +81,8 @@ export default class WebGLApp {
     this.renderer.setClearColor(background, backgroundAlpha)
 
     // save the fixed dimensions
-    this._width = options.width
-    this._height = options.height
+    this.#width = options.width
+    this.#height = options.height
 
     // clamp pixel ratio for performance
     this.maxPixelRatio = options.maxPixelRatio || 1.5
@@ -73,7 +90,7 @@ export default class WebGLApp {
     this.maxDeltaTime = options.maxDeltaTime || 1 / 30
 
     // setup the camera
-    const aspect = this._width / this._height
+    const aspect = this.#width / this.#height
     if (!options.orthographic) {
       this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far)
     } else {
@@ -112,8 +129,8 @@ export default class WebGLApp {
     this.canvas.addEventListener('pointerdown', (event) => {
       if (!event.isPrimary) return
       this.isDragging = true
-      this._startX = event.offsetX
-      this._startY = event.offsetY
+      this.#startX = event.offsetX
+      this.#startY = event.offsetY
       // call onPointerDown method
       this.scene.traverse((child) => {
         if (typeof child.onPointerDown === 'function') {
@@ -121,7 +138,7 @@ export default class WebGLApp {
         }
       })
       // call the pointerdown listeners
-      this._pointerdownListeners.forEach((fn) => fn(event, { x: event.offsetX, y: event.offsetY }))
+      this.#pointerdownListeners.forEach((fn) => fn(event, { x: event.offsetX, y: event.offsetY }))
     })
     this.canvas.addEventListener('pointermove', (event) => {
       if (!event.isPrimary) return
@@ -129,8 +146,8 @@ export default class WebGLApp {
       const position = {
         x: event.offsetX,
         y: event.offsetY,
-        ...(this._startX !== undefined && { dragX: event.offsetX - this._startX }),
-        ...(this._startY !== undefined && { dragY: event.offsetY - this._startY }),
+        ...(this.#startX !== undefined && { dragX: event.offsetX - this.#startX }),
+        ...(this.#startY !== undefined && { dragY: event.offsetY - this.#startY }),
       }
       this.scene.traverse((child) => {
         if (typeof child.onPointerMove === 'function') {
@@ -138,7 +155,7 @@ export default class WebGLApp {
         }
       })
       // call the pointermove listeners
-      this._pointermoveListeners.forEach((fn) => fn(event, position))
+      this.#pointermoveListeners.forEach((fn) => fn(event, position))
     })
     this.canvas.addEventListener('pointerup', (event) => {
       if (!event.isPrimary) return
@@ -147,8 +164,8 @@ export default class WebGLApp {
       const position = {
         x: event.offsetX,
         y: event.offsetY,
-        ...(this._startX !== undefined && { dragX: event.offsetX - this._startX }),
-        ...(this._startY !== undefined && { dragY: event.offsetY - this._startY }),
+        ...(this.#startX !== undefined && { dragX: event.offsetX - this.#startX }),
+        ...(this.#startY !== undefined && { dragY: event.offsetY - this.#startY }),
       }
       this.scene.traverse((child) => {
         if (typeof child.onPointerUp === 'function') {
@@ -156,11 +173,22 @@ export default class WebGLApp {
         }
       })
       // call the pointerup listeners
-      this._pointerupListeners.forEach((fn) => fn(event, position))
+      this.#pointerupListeners.forEach((fn) => fn(event, position))
 
-      this._startX = undefined
-      this._startY = undefined
+      this.#startX = undefined
+      this.#startY = undefined
     })
+
+    // expose a composer for postprocessing passes
+    if (options.postprocessing) {
+      const maxMultisampling = this.gl.getParameter(this.gl.MAX_SAMPLES)
+      this.composer = new EffectComposer(this.renderer, {
+        multisampling: Math.min(8, maxMultisampling),
+        frameBufferType: gamma ? THREE.HalfFloatType : undefined,
+        ...options,
+      })
+      this.composer.addPass(new RenderPass(this.scene, this.camera))
+    }
 
     // set up OrbitControls
     if (options.orbitControls) {
@@ -177,9 +205,17 @@ export default class WebGLApp {
       }
     }
 
+    // Attach the Cannon physics engine
+    if (options.world) {
+      this.world = options.world
+      if (options.showWorldWireframes) {
+        this.cannonDebugger = cannonDebugger(this.scene, this.world.bodies, { autoUpdate: false })
+      }
+    }
+
     // show the fps meter
     if (options.showFps) {
-      this.stats = new Stats()
+      this.stats = new Stats({ showMinMax: false, context: this.gl })
       this.stats.showPanel(0)
       document.body.appendChild(this.stats.dom)
     }
@@ -188,14 +224,31 @@ export default class WebGLApp {
     if (options.controls) {
       this.controls = initControls(options.controls, options)
     }
+
+    // detect the gpu info
+    // this.loadGPUTier = getGPUTier({ glContext: this.gl }).then((gpuTier) => {
+    //   this.gpu = {
+    //     name: gpuTier.gpu,
+    //     tier: gpuTier.tier,
+    //     isMobile: gpuTier.isMobile,
+    //     fps: gpuTier.fps,
+    //   }
+    // })
+
+    // initialize the mp4 recorder
+    // if (isWebCodecsSupported()) {
+    //   loadMP4Module().then((mp4) => {
+    //     this.#mp4 = mp4
+    //   })
+    // }
   }
 
   get width() {
-    return this._width || window.innerWidth
+    return this.#width || window.innerWidth
   }
 
   get height() {
-    return this._height || window.innerHeight
+    return this.#height || window.innerHeight
   }
 
   get pixelRatio() {
@@ -243,44 +296,75 @@ export default class WebGLApp {
     return this
   }
 
+  // convenience function to trigger a PNG download of the canvas
+  saveScreenshot = async ({
+    width = this.width,
+    height = this.height,
+    fileName = 'Screenshot',
+  } = {}) => {
+    // force a specific output size
+    this.resize({ width, height, pixelRatio: 1 })
+
+    const blob = await new Promise((resolve) => this.canvas.toBlob(resolve, 'image/png'))
+
+    // reset to default size
+    this.resize()
+
+    // save
+    downloadFile(`${fileName}.png`, blob)
+  }
+
   // start recording of a gif or a video
   startRecording = ({
-    width = 1920,
-    height = 1080,
+    width = this.width,
+    height = this.height,
     fileName = 'Recording',
-    format = 'gif',
     ...options
   } = {}) => {
-    if (this._capturer) {
+    if (!isWebCodecsSupported()) {
+      throw new Error('You need the WebCodecs API to use mp4-wasm')
+    }
+
+    if (this.isRecording) {
       return
     }
+
+    this.#fileName = fileName
 
     // force a specific output size
     this.resize({ width, height, pixelRatio: 1 })
     this.draw()
 
-    this._capturer = new CCapture({
-      format,
-      name: fileName,
-      workersPath: '',
-      motionBlurFrames: 2,
+    this.#mp4Encoder = this.#mp4.createWebCodecsEncoder({
+      width,
+      height,
+      fps: 60,
+      bitrate: 120 * 1000 * 1000, // 120 Mbit/s
       ...options,
     })
-    this._capturer.start()
   }
 
-  stopRecording = () => {
-    if (!this._capturer) {
+  stopRecording = async () => {
+    if (!this.isRecording) {
       return
     }
 
-    this._capturer.stop()
-    this._capturer.save()
-    this._capturer = undefined
+    for (let frame of this.#frames) {
+      await this.#mp4Encoder.addFrame(frame)
+    }
+    const buffer = await this.#mp4Encoder.end()
+    const blob = new Blob([buffer])
+
+    this.#mp4Encoder = undefined
+    // dispose the graphical resources associated with the ImageBitmap
+    this.#frames.forEach((frame) => frame.close())
+    this.#frames.length = 0
 
     // reset to default size
     this.resize()
     this.draw()
+
+    downloadFile(`${this.#fileName}.mp4`, blob)
   }
 
   update = (dt, time, xrframe) => {
@@ -313,73 +397,76 @@ export default class WebGLApp {
     }
 
     // call the update listeners
-    this._updateListeners.forEach((fn) => fn(dt, time, xrframe))
+    this.#updateListeners.forEach((fn) => fn(dt, time, xrframe))
 
     return this
   }
 
   onUpdate(fn) {
-    this._updateListeners.push(fn)
+    this.#updateListeners.push(fn)
   }
 
   onPointerDown(fn) {
-    this._pointerdownListeners.push(fn)
+    this.#pointerdownListeners.push(fn)
   }
 
   onPointerMove(fn) {
-    this._pointermoveListeners.push(fn)
+    this.#pointermoveListeners.push(fn)
   }
 
   onPointerUp(fn) {
-    this._pointerupListeners.push(fn)
+    this.#pointerupListeners.push(fn)
   }
 
   offUpdate(fn) {
-    const index = this._updateListeners.indexOf(fn)
+    const index = this.#updateListeners.indexOf(fn)
 
     // return silently if the function can't be found
     if (index === -1) {
       return
     }
 
-    this._updateListeners.splice(index, 1)
+    this.#updateListeners.splice(index, 1)
   }
 
   offPointerDown(fn) {
-    const index = this._pointerdownListeners.indexOf(fn)
+    const index = this.#pointerdownListeners.indexOf(fn)
 
     // return silently if the function can't be found
     if (index === -1) {
       return
     }
 
-    this._pointerdownListeners.splice(index, 1)
+    this.#pointerdownListeners.splice(index, 1)
   }
 
   offPointerMove(fn) {
-    const index = this._pointermoveListeners.indexOf(fn)
+    const index = this.#pointermoveListeners.indexOf(fn)
 
     // return silently if the function can't be found
     if (index === -1) {
       return
     }
 
-    this._pointermoveListeners.splice(index, 1)
+    this.#pointermoveListeners.splice(index, 1)
   }
 
   offPointerUp(fn) {
-    const index = this._pointerupListeners.indexOf(fn)
+    const index = this.#pointerupListeners.indexOf(fn)
 
     // return silently if the function can't be found
     if (index === -1) {
       return
     }
 
-    this._pointerupListeners.splice(index, 1)
+    this.#pointerupListeners.splice(index, 1)
   }
 
   draw = () => {
-    if (this.composer) {
+    // postprocessing doesn't currently work in WebXR
+    const isXR = this.renderer.xr.enabled && this.renderer.xr.isPresenting
+
+    if (this.composer && !isXR) {
       this.composer.render(this.dt)
     } else {
       this.renderer.render(this.scene, this.camera)
@@ -389,8 +476,12 @@ export default class WebGLApp {
 
   start = () => {
     if (this.isRunning) return
-    this.renderer.setAnimationLoop(this.animate)
     this.isRunning = true
+
+    // draw immediately
+    this.draw()
+
+    this.renderer.setAnimationLoop(this.animate)
     return this
   }
 
@@ -406,13 +497,19 @@ export default class WebGLApp {
 
     if (this.stats) this.stats.begin()
 
-    this.dt = Math.min(this.maxDeltaTime, (now - this._lastTime) / 1000)
+    this.dt = Math.min(this.maxDeltaTime, (now - this.#lastTime) / 1000)
     this.time += this.dt
-    this._lastTime = now
+    this.#lastTime = now
     this.update(this.dt, this.time, xrframe)
     this.draw()
 
-    if (this._capturer) this._capturer.capture(this.canvas)
+    // save the bitmap of the canvas for the recorder
+    if (this.isRecording) {
+      const index = this.#frames.length
+      createImageBitmap(this.canvas).then((bitmap) => {
+        this.#frames[index] = bitmap
+      })
+    }
 
     if (this.stats) this.stats.end()
   }
@@ -428,4 +525,16 @@ export default class WebGLApp {
       this.canvas.style.cursor = null
     }
   }
+}
+
+function downloadFile(name, blob) {
+  const link = document.createElement('a')
+  link.download = name
+  link.href = URL.createObjectURL(blob)
+  link.click()
+
+  setTimeout(() => {
+    URL.revokeObjectURL(blob)
+    link.removeAttribute('href')
+  }, 0)
 }

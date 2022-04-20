@@ -1,4 +1,3 @@
-import replace from '@rollup/plugin-replace'
 import babel from '@rollup/plugin-babel'
 
 const babelOptions = {
@@ -45,20 +44,5 @@ export default [
         file: 'build/ProjectedMaterial.module.js',
       },
     ],
-  },
-  // This build is for the examples
-  {
-    input: 'src/ProjectedMaterial.js',
-    external: ['three'],
-    plugins: [babel(babelOptions)],
-    output: {
-      format: 'esm',
-      file: 'examples/lib/ProjectedMaterial.module.js',
-      plugins: [
-        replace({
-          three: 'https://unpkg.com/three@0.126.1/build/three.module.js',
-        }),
-      ],
-    },
   },
 ]

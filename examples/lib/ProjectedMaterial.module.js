@@ -1,4 +1,4 @@
-import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js';
+import * as THREE from 'three';
 
 var id = 0;
 
@@ -14,12 +14,13 @@ function _classPrivateFieldLooseBase(receiver, privateKey) {
   return receiver;
 }
 
-function monkeyPatch(shader, {
-  defines = '',
-  header = '',
-  main = '',
-  ...replaces
-}) {
+function monkeyPatch(shader, _ref) {
+  let {
+    defines = '',
+    header = '',
+    main = '',
+    ...replaces
+  } = _ref;
   let patchedShader = shader;
 
   const replaceAll = (str, find, rep) => str.split(find).join(rep);
@@ -51,54 +52,13 @@ function addLoadListener(texture, callback) {
       return callback(texture);
     }
   }, 16);
-} // https://github.com/mrdoob/https://unpkg.com/three@0.126.1/build/three.module.js.js/blob/3c60484ce033e0dc2d434ce0eb89fc1f59d57d65/src/renderers/webgl/WebGLProgram.js#L22-L48s
-
-function getEncodingComponents(encoding) {
-  switch (encoding) {
-    case THREE.LinearEncoding:
-      return ['Linear', '( value )'];
-
-    case THREE.sRGBEncoding:
-      return ['sRGB', '( value )'];
-
-    case THREE.RGBEEncoding:
-      return ['RGBE', '( value )'];
-
-    case THREE.RGBM7Encoding:
-      return ['RGBM', '( value, 7.0 )'];
-
-    case THREE.RGBM16Encoding:
-      return ['RGBM', '( value, 16.0 )'];
-
-    case THREE.RGBDEncoding:
-      return ['RGBD', '( value, 256.0 )'];
-
-    case THREE.GammaEncoding:
-      return ['Gamma', '( value, float( GAMMA_FACTOR ) )'];
-
-    case THREE.LogLuvEncoding:
-      return ['LogLuv', '( value )'];
-
-    default:
-      console.warn('THREE.WebGLProgram: Unsupported encoding:', encoding);
-      return ['Linear', '( value )'];
-  }
-} // https://github.com/mrdoob/https://unpkg.com/three@0.126.1/build/three.module.js.js/blob/3c60484ce033e0dc2d434ce0eb89fc1f59d57d65/src/renderers/webgl/WebGLProgram.js#L66-L71
-
-function getTexelDecodingFunction(functionName, encoding) {
-  const components = getEncodingComponents(encoding);
-  return `
-    vec4 ${functionName}(vec4 value) {
-      return ${components[0]}ToLinear${components[1]};
-    }
-  `;
 }
 
-var _camera = _classPrivateFieldLooseKey("camera");
+var _camera = /*#__PURE__*/_classPrivateFieldLooseKey("camera");
 
-var _cover = _classPrivateFieldLooseKey("cover");
+var _cover = /*#__PURE__*/_classPrivateFieldLooseKey("cover");
 
-var _textureScale = _classPrivateFieldLooseKey("textureScale");
+var _textureScale = /*#__PURE__*/_classPrivateFieldLooseKey("textureScale");
 
 class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   // internal values... they are exposed via getters
@@ -126,7 +86,6 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
     this.uniforms.projectedTexture.value = texture;
     this.uniforms.isTextureLoaded.value = Boolean(texture.image);
-    this.projectedTexelToLinear = getTexelDecodingFunction('projectedTexelToLinear', texture.encoding);
 
     if (!this.uniforms.isTextureLoaded) {
       addLoadListener(texture, () => {
@@ -164,14 +123,16 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     this.saveDimensions();
   }
 
-  constructor({
-    camera = new THREE.PerspectiveCamera(),
-    texture = new THREE.Texture(),
-    textureScale = 1,
-    textureOffset = new THREE.Vector2(),
-    cover = false,
-    ...options
-  } = {}) {
+  constructor(_temp) {
+    let {
+      camera = new THREE.PerspectiveCamera(),
+      texture = new THREE.Texture(),
+      textureScale = 1,
+      textureOffset = new THREE.Vector2(),
+      cover = false,
+      ...options
+    } = _temp === void 0 ? {} : _temp;
+
     if (!texture.isTexture) {
       throw new Error('Invalid texture passed to the ProjectedMaterial');
     }
@@ -201,9 +162,7 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     _classPrivateFieldLooseBase(this, _cover)[_cover] = cover;
     _classPrivateFieldLooseBase(this, _textureScale)[_textureScale] = textureScale; // scale to keep the image proportions and apply textureScale
 
-    const [widthScaled, heightScaled] = computeScaledDimensions(texture, camera, textureScale, cover); // apply encoding based on provided texture
-
-    this.projectedTexelToLinear = getTexelDecodingFunction('projectedTexelToLinear', texture.encoding);
+    const [widthScaled, heightScaled] = computeScaledDimensions(texture, camera, textureScale, cover);
     this.uniforms = {
       projectedTexture: {
         value: texture
@@ -320,8 +279,6 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
           varying vec4 vWorldPosition;
           #endif
 
-          ${this.projectedTexelToLinear}
-
           float mapRange(float value, float min1, float max1, float min2, float max2) {
             return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
           }
@@ -357,9 +314,6 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
           if (isFacingProjector && isInTexture && isTextureLoaded && isTextureProjected) {
             vec4 textureColor = texture2D(projectedTexture, uv);
-
-            // apply the enccoding from the texture
-            textureColor = projectedTexelToLinear(textureColor);
 
             // apply the material opacity
             textureColor.a *= opacity;
@@ -443,9 +397,11 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     this.saveCameraMatrices();
   }
 
-  projectInstanceAt(index, instancedMesh, matrixWorld, {
-    forceCameraSave = false
-  } = {}) {
+  projectInstanceAt(index, instancedMesh, matrixWorld, _temp2) {
+    let {
+      forceCameraSave = false
+    } = _temp2 === void 0 ? {} : _temp2;
+
     if (!instancedMesh.isInstancedMesh) {
       throw new Error(`The provided mesh is not an InstancedMesh`);
     }
@@ -561,5 +517,4 @@ function allocateProjectionData(geometry, instancesCount) {
   geometry.setAttribute(`savedModelMatrix3`, new THREE.InstancedBufferAttribute(new Float32Array(instancesCount * 4), 4));
 }
 
-export default ProjectedMaterial;
-export { allocateProjectionData };
+export { allocateProjectionData, ProjectedMaterial as default };
