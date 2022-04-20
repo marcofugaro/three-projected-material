@@ -16,7 +16,7 @@
     "deploy": "gh-pages -d examples"
   },
   "peerDependencies": {
-    "three": "^0.124.0"
+    "three": "*"
   },
   "devDependencies": {
     "@babel/core": "^7.13.14",
