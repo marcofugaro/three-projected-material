@@ -2,9 +2,16 @@
   "name": "three-projected-material",
   "description": "Material which projects a texture onto an object",
   "version": "2.0.5",
-  "main": "build/ProjectedMaterial.js",
-  "module": "build/ProjectedMaterial.module.js",
+  "type": "module",
+  "main": "./build/ProjectedMaterial.js",
+  "module": "./build/ProjectedMaterial.module.js",
   "types": "./ProjectedMaterial.d.ts",
+  "exports": {
+    ".": {
+      "import": "./build/ProjectedMaterial.module.js",
+      "require": "./build/ProjectedMaterial.js"
+    }
+  },
   "repository": "git@github.com:marcofugaro/three-projected-material.git",
   "author": "Marco Fugaro <marco.fugaro@gmail.com>",
   "license": "MIT",
