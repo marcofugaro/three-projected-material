@@ -17,7 +17,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
     this.#camera = camera
 
-    this.saveDimensions()
+    this.#saveDimensions()
   }
 
   get texture() {
@@ -35,10 +35,10 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       addLoadListener(texture, () => {
         this.uniforms.isTextureLoaded.value = true
 
-        this.saveDimensions()
+        this.#saveDimensions()
       })
     } else {
-      this.saveDimensions()
+      this.#saveDimensions()
     }
   }
 
@@ -47,7 +47,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   }
   set textureScale(textureScale) {
     this.#textureScale = textureScale
-    this.saveDimensions()
+    this.#saveDimensions()
   }
 
   get textureOffset() {
@@ -62,7 +62,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   }
   set cover(cover) {
     this.#cover = cover
-    this.saveDimensions()
+    this.#saveDimensions()
   }
 
   constructor({
@@ -233,11 +233,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     // is the same used to render.
     // We do this on window resize because there is no way to
     // listen for the resize of the renderer
-    window.addEventListener('resize', () => {
-      this.uniforms.projectionMatrixCamera.value.copy(this.camera.projectionMatrix)
-
-      this.saveDimensions()
-    })
+    window.addEventListener('resize', this.#saveCameraProjectionMatrix)
 
     // If the image texture passed hasn't loaded yet,
     // wait for it to load and compute the correct proportions.
@@ -245,11 +241,17 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     addLoadListener(texture, () => {
       this.uniforms.isTextureLoaded.value = true
 
-      this.saveDimensions()
+      this.#saveDimensions()
     })
   }
 
-  saveDimensions() {
+  #saveCameraProjectionMatrix() {
+    this.uniforms.projectionMatrixCamera.value.copy(this.camera.projectionMatrix)
+
+    this.#saveDimensions()
+  }
+
+  #saveDimensions() {
     const [widthScaled, heightScaled] = computeScaledDimensions(
       this.texture,
       this.camera,
@@ -261,7 +263,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     this.uniforms.heightScaled.value = heightScaled
   }
 
-  saveCameraMatrices() {
+  #saveCameraMatrices() {
     // make sure the camera matrices are updated
     this.camera.updateProjectionMatrix()
     this.camera.updateMatrixWorld()
@@ -322,7 +324,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     }
 
     // persist also the current camera position and matrices
-    this.saveCameraMatrices()
+    this.#saveCameraMatrices()
   }
 
   projectInstanceAt(index, instancedMesh, matrixWorld, { forceCameraSave = false } = {}) {
@@ -405,7 +407,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     // only if it's the first instance since most surely
     // in all other instances the camera won't change
     if (index === 0 || forceCameraSave) {
-      this.saveCameraMatrices()
+      this.#saveCameraMatrices()
     }
   }
 
@@ -419,6 +421,11 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     this.cover = source.cover
 
     return this
+  }
+
+  dispose() {
+    super.dispose()
+    window.removeEventListener('resize', this.#saveCameraProjectionMatrix)
   }
 }
 
