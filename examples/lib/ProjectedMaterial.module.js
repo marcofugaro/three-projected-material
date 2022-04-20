@@ -60,6 +60,12 @@ var _cover = /*#__PURE__*/_classPrivateFieldLooseKey("cover");
 
 var _textureScale = /*#__PURE__*/_classPrivateFieldLooseKey("textureScale");
 
+var _saveCameraProjectionMatrix = /*#__PURE__*/_classPrivateFieldLooseKey("saveCameraProjectionMatrix");
+
+var _saveDimensions = /*#__PURE__*/_classPrivateFieldLooseKey("saveDimensions");
+
+var _saveCameraMatrices = /*#__PURE__*/_classPrivateFieldLooseKey("saveCameraMatrices");
+
 class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   // internal values... they are exposed via getters
   get camera() {
@@ -72,7 +78,8 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     }
 
     _classPrivateFieldLooseBase(this, _camera)[_camera] = camera;
-    this.saveDimensions();
+
+    _classPrivateFieldLooseBase(this, _saveDimensions)[_saveDimensions]();
   }
 
   get texture() {
@@ -90,10 +97,11 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     if (!this.uniforms.isTextureLoaded) {
       addLoadListener(texture, () => {
         this.uniforms.isTextureLoaded.value = true;
-        this.saveDimensions();
+
+        _classPrivateFieldLooseBase(this, _saveDimensions)[_saveDimensions]();
       });
     } else {
-      this.saveDimensions();
+      _classPrivateFieldLooseBase(this, _saveDimensions)[_saveDimensions]();
     }
   }
 
@@ -103,7 +111,8 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
   set textureScale(textureScale) {
     _classPrivateFieldLooseBase(this, _textureScale)[_textureScale] = textureScale;
-    this.saveDimensions();
+
+    _classPrivateFieldLooseBase(this, _saveDimensions)[_saveDimensions]();
   }
 
   get textureOffset() {
@@ -120,7 +129,8 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
   set cover(cover) {
     _classPrivateFieldLooseBase(this, _cover)[_cover] = cover;
-    this.saveDimensions();
+
+    _classPrivateFieldLooseBase(this, _saveDimensions)[_saveDimensions]();
   }
 
   constructor(_temp) {
@@ -142,6 +152,15 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     }
 
     super(options);
+    Object.defineProperty(this, _saveCameraMatrices, {
+      value: _saveCameraMatrices2
+    });
+    Object.defineProperty(this, _saveDimensions, {
+      value: _saveDimensions2
+    });
+    Object.defineProperty(this, _saveCameraProjectionMatrix, {
+      value: _saveCameraProjectionMatrix2
+    });
     Object.defineProperty(this, _camera, {
       writable: true,
       value: void 0
@@ -162,7 +181,7 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     _classPrivateFieldLooseBase(this, _cover)[_cover] = cover;
     _classPrivateFieldLooseBase(this, _textureScale)[_textureScale] = textureScale; // scale to keep the image proportions and apply textureScale
 
-    const [widthScaled, heightScaled] = computeScaledDimensions(texture, camera, textureScale, cover);
+    const [_widthScaled, _heightScaled] = computeScaledDimensions(texture, camera, textureScale, cover);
     this.uniforms = {
       projectedTexture: {
         value: texture
@@ -199,10 +218,10 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
         value: new THREE.Matrix4()
       },
       widthScaled: {
-        value: widthScaled
+        value: _widthScaled
       },
       heightScaled: {
-        value: heightScaled
+        value: _heightScaled
       },
       textureOffset: {
         value: textureOffset
@@ -329,41 +348,15 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     // listen for the resize of the renderer
 
 
-    window.addEventListener('resize', () => {
-      this.uniforms.projectionMatrixCamera.value.copy(this.camera.projectionMatrix);
-      this.saveDimensions();
-    }); // If the image texture passed hasn't loaded yet,
+    window.addEventListener('resize', _classPrivateFieldLooseBase(this, _saveCameraProjectionMatrix)[_saveCameraProjectionMatrix]); // If the image texture passed hasn't loaded yet,
     // wait for it to load and compute the correct proportions.
     // This avoids rendering black while the texture is loading
 
     addLoadListener(texture, () => {
       this.uniforms.isTextureLoaded.value = true;
-      this.saveDimensions();
+
+      _classPrivateFieldLooseBase(this, _saveDimensions)[_saveDimensions]();
     });
-  }
-
-  saveDimensions() {
-    const [widthScaled, heightScaled] = computeScaledDimensions(this.texture, this.camera, this.textureScale, this.cover);
-    this.uniforms.widthScaled.value = widthScaled;
-    this.uniforms.heightScaled.value = heightScaled;
-  }
-
-  saveCameraMatrices() {
-    // make sure the camera matrices are updated
-    this.camera.updateProjectionMatrix();
-    this.camera.updateMatrixWorld();
-    this.camera.updateWorldMatrix(); // update the uniforms from the camera so they're
-    // fixed in the camera's position at the projection time
-
-    const viewMatrixCamera = this.camera.matrixWorldInverse;
-    const projectionMatrixCamera = this.camera.projectionMatrix;
-    const modelMatrixCamera = this.camera.matrixWorld;
-    this.uniforms.viewMatrixCamera.value.copy(viewMatrixCamera);
-    this.uniforms.projectionMatrixCamera.value.copy(projectionMatrixCamera);
-    this.uniforms.projPosition.value.copy(this.camera.position);
-    this.uniforms.projDirection.value.set(0, 0, 1).applyMatrix4(modelMatrixCamera); // tell the shader we've projected
-
-    this.uniforms.isTextureProjected.value = true;
   }
 
   project(mesh) {
@@ -394,7 +387,7 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     } // persist also the current camera position and matrices
 
 
-    this.saveCameraMatrices();
+    _classPrivateFieldLooseBase(this, _saveCameraMatrices)[_saveCameraMatrices]();
   }
 
   projectInstanceAt(index, instancedMesh, matrixWorld, _temp2) {
@@ -439,7 +432,7 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
 
     if (index === 0 || forceCameraSave) {
-      this.saveCameraMatrices();
+      _classPrivateFieldLooseBase(this, _saveCameraMatrices)[_saveCameraMatrices]();
     }
   }
 
@@ -453,7 +446,42 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     return this;
   }
 
+  dispose() {
+    super.dispose();
+    window.removeEventListener('resize', _classPrivateFieldLooseBase(this, _saveCameraProjectionMatrix)[_saveCameraProjectionMatrix]);
+  }
+
 } // get camera ratio from different types of cameras
+
+function _saveCameraProjectionMatrix2() {
+  this.uniforms.projectionMatrixCamera.value.copy(this.camera.projectionMatrix);
+
+  _classPrivateFieldLooseBase(this, _saveDimensions)[_saveDimensions]();
+}
+
+function _saveDimensions2() {
+  const [widthScaled, heightScaled] = computeScaledDimensions(this.texture, this.camera, this.textureScale, this.cover);
+  this.uniforms.widthScaled.value = widthScaled;
+  this.uniforms.heightScaled.value = heightScaled;
+}
+
+function _saveCameraMatrices2() {
+  // make sure the camera matrices are updated
+  this.camera.updateProjectionMatrix();
+  this.camera.updateMatrixWorld();
+  this.camera.updateWorldMatrix(); // update the uniforms from the camera so they're
+  // fixed in the camera's position at the projection time
+
+  const viewMatrixCamera = this.camera.matrixWorldInverse;
+  const projectionMatrixCamera = this.camera.projectionMatrix;
+  const modelMatrixCamera = this.camera.matrixWorld;
+  this.uniforms.viewMatrixCamera.value.copy(viewMatrixCamera);
+  this.uniforms.projectionMatrixCamera.value.copy(projectionMatrixCamera);
+  this.uniforms.projPosition.value.copy(this.camera.position);
+  this.uniforms.projDirection.value.set(0, 0, 1).applyMatrix4(modelMatrixCamera); // tell the shader we've projected
+
+  this.uniforms.isTextureProjected.value = true;
+}
 
 function getCameraRatio(camera) {
   switch (camera.type) {
