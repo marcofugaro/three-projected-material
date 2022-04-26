@@ -158,9 +158,6 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     Object.defineProperty(this, _saveDimensions, {
       value: _saveDimensions2
     });
-    Object.defineProperty(this, _saveCameraProjectionMatrix, {
-      value: _saveCameraProjectionMatrix2
-    });
     Object.defineProperty(this, _camera, {
       writable: true,
       value: void 0
@@ -172,6 +169,14 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     Object.defineProperty(this, _textureScale, {
       writable: true,
       value: void 0
+    });
+    Object.defineProperty(this, _saveCameraProjectionMatrix, {
+      writable: true,
+      value: () => {
+        this.uniforms.projectionMatrixCamera.value.copy(this.camera.projectionMatrix);
+
+        _classPrivateFieldLooseBase(this, _saveDimensions)[_saveDimensions]();
+      }
     });
     Object.defineProperty(this, 'isProjectedMaterial', {
       value: true
@@ -452,12 +457,6 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   }
 
 } // get camera ratio from different types of cameras
-
-function _saveCameraProjectionMatrix2() {
-  this.uniforms.projectionMatrixCamera.value.copy(this.camera.projectionMatrix);
-
-  _classPrivateFieldLooseBase(this, _saveDimensions)[_saveDimensions]();
-}
 
 function _saveDimensions2() {
   const [widthScaled, heightScaled] = computeScaledDimensions(this.texture, this.camera, this.textureScale, this.cover);
