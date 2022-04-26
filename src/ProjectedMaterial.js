@@ -245,7 +245,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     })
   }
 
-  #saveCameraProjectionMatrix() {
+  #saveCameraProjectionMatrix = () => {
     this.uniforms.projectionMatrixCamera.value.copy(this.camera.projectionMatrix)
 
     this.#saveDimensions()
