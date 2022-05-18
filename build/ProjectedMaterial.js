@@ -118,7 +118,7 @@
       this.uniforms.projectedTexture.value = texture;
       this.uniforms.isTextureLoaded.value = Boolean(texture.image);
 
-      if (!this.uniforms.isTextureLoaded) {
+      if (!this.uniforms.isTextureLoaded.value) {
         addLoadListener(texture, () => {
           this.uniforms.isTextureLoaded.value = true;
 
