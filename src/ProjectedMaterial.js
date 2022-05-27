@@ -36,6 +36,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
         this.uniforms.isTextureLoaded.value = true
 
         this.#saveDimensions()
+        this.dispatchEvent({ type: 'textureload' })
       })
     } else {
       this.#saveDimensions()
@@ -242,6 +243,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       this.uniforms.isTextureLoaded.value = true
 
       this.#saveDimensions()
+      this.dispatchEvent({ type: 'textureload' })
     })
   }
 
