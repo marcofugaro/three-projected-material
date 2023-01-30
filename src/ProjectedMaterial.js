@@ -15,6 +15,12 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       throw new Error('Invalid camera set to the ProjectedMaterial')
     }
 
+    if (camera.type !== this.#camera.type) {
+      throw new Error(
+        'Cannot change camera type after the material has been created. Use another material.'
+      )
+    }
+
     this.#camera = camera
 
     this.#saveDimensions()
