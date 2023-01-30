@@ -77,6 +77,10 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       throw new Error('Invalid camera set to the ProjectedMaterial');
     }
 
+    if (camera.type !== _classPrivateFieldLooseBase(this, _camera)[_camera].type) {
+      throw new Error('Cannot change camera type after the material has been created. Use another material.');
+    }
+
     _classPrivateFieldLooseBase(this, _camera)[_camera] = camera;
 
     _classPrivateFieldLooseBase(this, _saveDimensions)[_saveDimensions]();
@@ -97,6 +101,9 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     if (!this.uniforms.isTextureLoaded.value) {
       addLoadListener(texture, () => {
         this.uniforms.isTextureLoaded.value = true;
+        this.dispatchEvent({
+          type: 'textureload'
+        });
 
         _classPrivateFieldLooseBase(this, _saveDimensions)[_saveDimensions]();
       });
@@ -359,13 +366,16 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
 
     addLoadListener(texture, () => {
       this.uniforms.isTextureLoaded.value = true;
+      this.dispatchEvent({
+        type: 'textureload'
+      });
 
       _classPrivateFieldLooseBase(this, _saveDimensions)[_saveDimensions]();
     });
   }
 
   project(mesh) {
-    if (!(Array.isArray(mesh.material) ? mesh.material.every(m => m.isProjectedMaterial) : mesh.material.isProjectedMaterial)) {
+    if (!(Array.isArray(mesh.material) ? mesh.material.some(m => m.isProjectedMaterial) : mesh.material.isProjectedMaterial)) {
       throw new Error(`The mesh material must be a ProjectedMaterial`);
     }
 
