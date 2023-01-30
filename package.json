@@ -1,7 +1,7 @@
 {
   "name": "three-projected-material",
   "description": "Material which projects a texture onto an object",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "type": "module",
   "main": "./build/ProjectedMaterial.js",
   "module": "./build/ProjectedMaterial.module.js",
