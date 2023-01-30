@@ -8,6 +8,7 @@
   "types": "./ProjectedMaterial.d.ts",
   "exports": {
     ".": {
+      "types": "./ProjectedMaterial.d.ts",
       "import": "./build/ProjectedMaterial.module.js",
       "require": "./build/ProjectedMaterial.js"
     }
@@ -19,7 +20,7 @@
     "build/"
   ],
   "scripts": {
-    "start": "serve examples/",
+    "start": "serve examples/ --no-request-logging",
     "build": "rollup -c",
     "postbuild": "cp build/ProjectedMaterial.module.js examples/lib/"
   },
@@ -34,8 +35,8 @@
     "@types/three": "^0.139.0",
     "eslint-config-accurapp": "^5.1.0",
     "rollup": "^2.70.2",
-    "serve": "^13.0.2",
+    "serve": "^14.2.0",
     "stats.js": "^0.17.0",
-    "three": "0.139.2"
+    "three": "0.149.0"
   }
 }
