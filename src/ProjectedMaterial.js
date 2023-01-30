@@ -34,9 +34,9 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     if (!this.uniforms.isTextureLoaded.value) {
       addLoadListener(texture, () => {
         this.uniforms.isTextureLoaded.value = true
+        this.dispatchEvent({ type: 'textureload' })
 
         this.#saveDimensions()
-        this.dispatchEvent({ type: 'textureload' })
       })
     } else {
       this.#saveDimensions()
@@ -241,9 +241,9 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     // This avoids rendering black while the texture is loading
     addLoadListener(texture, () => {
       this.uniforms.isTextureLoaded.value = true
+      this.dispatchEvent({ type: 'textureload' })
 
       this.#saveDimensions()
-      this.dispatchEvent({ type: 'textureload' })
     })
   }
 
