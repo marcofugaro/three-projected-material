@@ -510,7 +510,7 @@
     const modelMatrixCamera = this.camera.matrixWorld;
     this.uniforms.viewMatrixCamera.value.copy(viewMatrixCamera);
     this.uniforms.projectionMatrixCamera.value.copy(projectionMatrixCamera);
-    this.uniforms.projPosition.value.copy(this.camera.position);
+    this.uniforms.projPosition.value.setFromMatrixPosition(modelMatrixCamera);
     this.uniforms.projDirection.value.set(0, 0, 1).applyMatrix4(modelMatrixCamera); // tell the shader we've projected
 
     this.uniforms.isTextureProjected.value = true;
