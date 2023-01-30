@@ -53,49 +53,45 @@
       // attach it to the window to inspect in the console
       window.webgl = webgl
 
-      init()
+      // load the model and extract the geometry from it
+      const gltf = await loadGltf('./models/suzanne.gltf')
+      const geometry = extractGeometry(gltf.scene)
 
-      async function init() {
-        // load the model and extract the geometry from it
-        const gltf = await loadGltf('./models/suzanne.gltf')
-        const geometry = extractGeometry(gltf.scene)
+      // load the example texture
+      const texture = new THREE.TextureLoader().load('./images/uv.jpg')
 
-        // load the example texture
-        const texture = new THREE.TextureLoader().load('./images/uv.jpg')
+      // create the mesh with the projected material
+      const material = new ProjectedMaterial({
+        camera: webgl.camera,
+        texture,
+        color: '#ccc',
+        textureScale: 0.8,
+      })
+      const mesh = new THREE.Mesh(geometry, material)
+      webgl.scene.add(mesh)
 
-        // create the mesh with the projected material
-        const material = new ProjectedMaterial({
-          camera: webgl.camera,
-          texture,
-          color: '#ccc',
-          textureScale: 0.8,
-        })
-        const mesh = new THREE.Mesh(geometry, material)
-        webgl.scene.add(mesh)
+      // move the mesh any way you want!
+      // (in this case no translations/rotations)
 
-        // move the mesh any way you want!
-        // (in this case no translations/rotations)
+      // and when you're ready project the texture!
+      material.project(mesh)
 
-        // and when you're ready project the texture!
-        material.project(mesh)
+      // rotate for demo purposes
+      mesh.rotation.y = Math.PI / 3
+      webgl.onUpdate(() => {
+        mesh.rotation.y -= 0.003
+      })
 
-        // rotate for demo purposes
-        mesh.rotation.y = Math.PI / 3
-        webgl.onUpdate(() => {
-          mesh.rotation.y -= 0.003
-        })
+      // add lights
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
+      directionalLight.position.set(0, 10, 10)
+      webgl.scene.add(directionalLight)
 
-        // add lights
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
-        directionalLight.position.set(0, 10, 10)
-        webgl.scene.add(directionalLight)
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+      webgl.scene.add(ambientLight)
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-        webgl.scene.add(ambientLight)
-
-        // start animation loop
-        webgl.start()
-      }
+      // start animation loop
+      webgl.start()
     </script>
   </body>
 </html>

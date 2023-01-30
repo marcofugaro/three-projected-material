@@ -64,70 +64,66 @@
       // attach it to the window to inspect in the console
       window.webgl = webgl
 
-      init()
+      // create a video element and play it
+      const video = document.createElement('video')
+      video.src = './images/bigbucksbunny.mp4'
+      video.muted = true
+      video.loop = true
+      video.play()
 
-      async function init() {
-        // create a video element and play it
-        const video = document.createElement('video')
-        video.src = './images/bigbucksbunny.mp4'
-        video.muted = true
-        video.loop = true
-        video.play()
+      // create the VideoTexture and enable gamma correction for it
+      const texture = new THREE.VideoTexture(video)
+      texture.encoding = THREE.sRGBEncoding
 
-        // create the VideoTexture and enable gamma correction for it
-        const texture = new THREE.VideoTexture(video)
-        texture.encoding = THREE.sRGBEncoding
+      // load the cinema model
+      const gltf = await loadGltf('./models/cinema_screen.glb')
+      const cinemaModel = gltf.scene
+      cinemaModel.scale.setScalar(0.1)
+      webgl.scene.add(cinemaModel)
 
-        // load the cinema model
-        const gltf = await loadGltf('./models/cinema_screen.glb')
-        const cinemaModel = gltf.scene
-        cinemaModel.scale.setScalar(0.1)
-        webgl.scene.add(cinemaModel)
-
-        // create the video projector!
-        const projector = new THREE.PerspectiveCamera(30, 16 / 9, 0.01, 2)
-        projector.position.set(0, 0.55, 1.52)
-        const helper = new THREE.CameraHelper(projector)
-        webgl.controls.$onChanges((controls) => {
-          if (controls.showProjector) {
-            if (controls.showProjector.value) {
-              webgl.scene.add(helper)
-            } else {
-              webgl.scene.remove(helper)
-            }
+      // create the video projector!
+      const projector = new THREE.PerspectiveCamera(30, 16 / 9, 0.01, 2)
+      projector.position.set(0, 0.55, 1.52)
+      const helper = new THREE.CameraHelper(projector)
+      webgl.controls.$onChanges((controls) => {
+        if (controls.showProjector) {
+          if (controls.showProjector.value) {
+            webgl.scene.add(helper)
+          } else {
+            webgl.scene.remove(helper)
           }
-        })
+        }
+      })
 
-        // find the screen object in the cinema model
-        let screen
-        cinemaModel.traverse((child) => {
-          if (child.name === 'screen') {
-            screen = child
-          }
-        })
+      // find the screen object in the cinema model
+      let screen
+      cinemaModel.traverse((child) => {
+        if (child.name === 'screen') {
+          screen = child
+        }
+      })
 
-        // assign the ProjectedMaterial to the screen
-        const material = new ProjectedMaterial({
-          camera: projector,
-          texture,
-          color: '#aaa', // the color of the remaining screen
-        })
-        screen.material = material
+      // assign the ProjectedMaterial to the screen
+      const material = new ProjectedMaterial({
+        camera: projector,
+        texture,
+        color: '#aaa', // the color of the remaining screen
+      })
+      screen.material = material
 
-        // everything is set, project!
-        material.project(screen)
+      // everything is set, project!
+      material.project(screen)
 
-        // add lights
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
-        directionalLight.position.set(0, 10, 10)
-        webgl.scene.add(directionalLight)
+      // add lights
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
+      directionalLight.position.set(0, 10, 10)
+      webgl.scene.add(directionalLight)
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3)
-        webgl.scene.add(ambientLight)
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.3)
+      webgl.scene.add(ambientLight)
 
-        // start animation loop
-        webgl.start()
-      }
+      // start animation loop
+      webgl.start()
     </script>
   </body>
 </html>
