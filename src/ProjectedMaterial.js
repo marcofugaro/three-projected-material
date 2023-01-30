@@ -287,7 +287,7 @@ export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   project(mesh) {
     if (
       !(Array.isArray(mesh.material)
-        ? mesh.material.every((m) => m.isProjectedMaterial)
+        ? mesh.material.some((m) => m.isProjectedMaterial)
         : mesh.material.isProjectedMaterial)
     ) {
       throw new Error(`The mesh material must be a ProjectedMaterial`)
