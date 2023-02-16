@@ -1,8 +1,17 @@
 // Taken from https://github.com/marcofugaro/threejs-modern-app/blob/master/src/lib/WebGLApp.js
-import * as THREE from 'three'
+import {
+  Color,
+  OrthographicCamera,
+  PerspectiveCamera,
+  Scene,
+  sRGBEncoding,
+  Vector3,
+  WebGLRenderer,
+} from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import Stats from 'three/addons/libs/stats.module.js'
-import { initControls } from './Controls.js'
+import GUI from 'https://unpkg.com/lil-gui@0.18.0/dist/lil-gui.esm.js'
+import { ColorManagement } from 'three'
 
 export default class WebGLApp {
   #width
@@ -17,13 +26,9 @@ export default class WebGLApp {
   #pointerupListeners = []
   #startX
   #startY
-  #mp4
-  #mp4Encoder
-  #fileName
-  #frames = []
 
   get background() {
-    return this.renderer.getClearColor(new THREE.Color())
+    return this.renderer.getClearColor(new Color())
   }
 
   get backgroundAlpha() {
@@ -38,10 +43,6 @@ export default class WebGLApp {
     this.renderer.setClearColor(this.background, backgroundAlpha)
   }
 
-  get isRecording() {
-    return Boolean(this.#mp4Encoder)
-  }
-
   constructor({
     background = '#111',
     backgroundAlpha = 1,
@@ -49,11 +50,9 @@ export default class WebGLApp {
     frustumSize = 3,
     near = 0.01,
     far = 100,
-    gamma = false,
-    physicallyCorrectLights = false,
     ...options
   } = {}) {
-    this.renderer = new THREE.WebGLRenderer({
+    this.renderer = new WebGLRenderer({
       antialias: !options.postprocessing,
       alpha: backgroundAlpha !== 1,
       // enabled for recording gifs or videos,
@@ -61,16 +60,16 @@ export default class WebGLApp {
       preserveDrawingBuffer: true,
       ...options,
     })
+    // enable gamma correction
+    // this will be the default in the future
+    // https://github.com/mrdoob/three.js/issues/23614
+    ColorManagement.enabled = true
+    // this will be the default in the future
+    // https://github.com/mrdoob/three.js/issues/23614
+    this.renderer.useLegacyLights = false
+
     if (options.sortObjects !== undefined) {
       this.renderer.sortObjects = options.sortObjects
-    }
-    if (gamma) {
-      // enable gamma correction, read more about it here:
-      // https://www.donmccurdy.com/2020/06/17/color-management-in-threejs/
-      this.renderer.outputEncoding = THREE.sRGBEncoding
-    }
-    if (physicallyCorrectLights) {
-      this.renderer.physicallyCorrectLights = true
     }
     if (options.xr) {
       this.renderer.xr.enabled = true
@@ -92,9 +91,9 @@ export default class WebGLApp {
     // setup the camera
     const aspect = this.#width / this.#height
     if (!options.orthographic) {
-      this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far)
+      this.camera = new PerspectiveCamera(fov, aspect, near, far)
     } else {
-      this.camera = new THREE.OrthographicCamera(
+      this.camera = new OrthographicCamera(
         -(frustumSize * aspect) / 2,
         (frustumSize * aspect) / 2,
         frustumSize / 2,
@@ -104,10 +103,10 @@ export default class WebGLApp {
       )
       this.camera.frustumSize = frustumSize
     }
-    this.camera.position.copy(options.cameraPosition || new THREE.Vector3(0, 0, 4))
-    this.camera.lookAt(0, 0, 0)
+    this.camera.position.copy(options.cameraPosition || new Vector3(0, 0, 4))
+    this.camera.lookAt(options.cameraTarget || new Vector3())
 
-    this.scene = new THREE.Scene()
+    this.scene = new Scene()
 
     this.gl = this.renderer.getContext()
 
@@ -179,17 +178,6 @@ export default class WebGLApp {
       this.#startY = undefined
     })
 
-    // expose a composer for postprocessing passes
-    if (options.postprocessing) {
-      const maxMultisampling = this.gl.getParameter(this.gl.MAX_SAMPLES)
-      this.composer = new EffectComposer(this.renderer, {
-        multisampling: Math.min(8, maxMultisampling),
-        frameBufferType: gamma ? THREE.HalfFloatType : undefined,
-        ...options,
-      })
-      this.composer.addPass(new RenderPass(this.scene, this.camera))
-    }
-
     // set up OrbitControls
     if (options.orbitControls) {
       this.orbitControls = new OrbitControls(this.camera, this.canvas)
@@ -205,14 +193,6 @@ export default class WebGLApp {
       }
     }
 
-    // Attach the Cannon physics engine
-    if (options.world) {
-      this.world = options.world
-      if (options.showWorldWireframes) {
-        this.cannonDebugger = cannonDebugger(this.scene, this.world.bodies, { autoUpdate: false })
-      }
-    }
-
     // show the fps meter
     if (options.showFps) {
       this.stats = new Stats({ showMinMax: false, context: this.gl })
@@ -220,27 +200,14 @@ export default class WebGLApp {
       document.body.appendChild(this.stats.dom)
     }
 
-    // initialize the controls-state
-    if (options.controls) {
-      this.controls = initControls(options.controls, options)
+    // initialize the gui
+    if (options.gui) {
+      this.gui = new GUI()
+
+      if (options.guiClosed) {
+        this.gui.close()
+      }
     }
-
-    // detect the gpu info
-    // this.loadGPUTier = getGPUTier({ glContext: this.gl }).then((gpuTier) => {
-    //   this.gpu = {
-    //     name: gpuTier.gpu,
-    //     tier: gpuTier.tier,
-    //     isMobile: gpuTier.isMobile,
-    //     fps: gpuTier.fps,
-    //   }
-    // })
-
-    // initialize the mp4 recorder
-    // if (isWebCodecsSupported()) {
-    //   loadMP4Module().then((mp4) => {
-    //     this.#mp4 = mp4
-    //   })
-    // }
   }
 
   get width() {
@@ -296,77 +263,6 @@ export default class WebGLApp {
     return this
   }
 
-  // convenience function to trigger a PNG download of the canvas
-  saveScreenshot = async ({
-    width = this.width,
-    height = this.height,
-    fileName = 'Screenshot',
-  } = {}) => {
-    // force a specific output size
-    this.resize({ width, height, pixelRatio: 1 })
-
-    const blob = await new Promise((resolve) => this.canvas.toBlob(resolve, 'image/png'))
-
-    // reset to default size
-    this.resize()
-
-    // save
-    downloadFile(`${fileName}.png`, blob)
-  }
-
-  // start recording of a gif or a video
-  startRecording = ({
-    width = this.width,
-    height = this.height,
-    fileName = 'Recording',
-    ...options
-  } = {}) => {
-    if (!isWebCodecsSupported()) {
-      throw new Error('You need the WebCodecs API to use mp4-wasm')
-    }
-
-    if (this.isRecording) {
-      return
-    }
-
-    this.#fileName = fileName
-
-    // force a specific output size
-    this.resize({ width, height, pixelRatio: 1 })
-    this.draw()
-
-    this.#mp4Encoder = this.#mp4.createWebCodecsEncoder({
-      width,
-      height,
-      fps: 60,
-      bitrate: 120 * 1000 * 1000, // 120 Mbit/s
-      ...options,
-    })
-  }
-
-  stopRecording = async () => {
-    if (!this.isRecording) {
-      return
-    }
-
-    for (let frame of this.#frames) {
-      await this.#mp4Encoder.addFrame(frame)
-    }
-    const buffer = await this.#mp4Encoder.end()
-    const blob = new Blob([buffer])
-
-    this.#mp4Encoder = undefined
-    // dispose the graphical resources associated with the ImageBitmap
-    this.#frames.forEach((frame) => frame.close())
-    this.#frames.length = 0
-
-    // reset to default size
-    this.resize()
-    this.draw()
-
-    downloadFile(`${this.#fileName}.mp4`, blob)
-  }
-
   update = (dt, time, xrframe) => {
     if (this.orbitControls) {
       this.orbitControls.update()
@@ -378,23 +274,6 @@ export default class WebGLApp {
         obj.update(dt, time, xrframe)
       }
     })
-
-    if (this.world) {
-      // update the cannon-es physics engine
-      this.world.step(1 / 60, dt)
-
-      // update the debug wireframe renderer
-      if (this.cannonDebugger) {
-        this.cannonDebugger.update()
-      }
-
-      // recursively tell all child bodies to update
-      this.world.bodies.forEach((body) => {
-        if (typeof body.update === 'function') {
-          body.update(dt, time)
-        }
-      })
-    }
 
     // call the update listeners
     this.#updateListeners.forEach((fn) => fn(dt, time, xrframe))
@@ -503,14 +382,6 @@ export default class WebGLApp {
     this.update(this.dt, this.time, xrframe)
     this.draw()
 
-    // save the bitmap of the canvas for the recorder
-    if (this.isRecording) {
-      const index = this.#frames.length
-      createImageBitmap(this.canvas).then((bitmap) => {
-        this.#frames[index] = bitmap
-      })
-    }
-
     if (this.stats) this.stats.end()
   }
 
@@ -525,16 +396,4 @@ export default class WebGLApp {
       this.canvas.style.cursor = null
     }
   }
-}
-
-function downloadFile(name, blob) {
-  const link = document.createElement('a')
-  link.download = name
-  link.href = URL.createObjectURL(blob)
-  link.click()
-
-  setTimeout(() => {
-    URL.revokeObjectURL(blob)
-    link.removeAttribute('href')
-  }, 0)
 }

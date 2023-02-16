@@ -19,7 +19,7 @@
 
     <!-- Import maps polyfill -->
     <!-- Remove this when import maps will be widely supported -->
-    <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
 
     <script type="importmap">
       {
@@ -34,7 +34,6 @@
       import * as THREE from 'three'
       import WebGLApp from './lib/WebGLApp.js'
       import ProjectedMaterial, { allocateProjectionData } from './lib/ProjectedMaterial.module.js'
-      import State from './lib/controls-state.module.js'
       import { visibleWidthAtZDepth, visibleHeightAtZDepth } from './lib/three-utils.js'
       import { random } from './lib/math-utils.js'
 
@@ -51,10 +50,8 @@
         showFps: true,
         // enable orbit-controls
         orbitControls: true,
-        // add the controls-state pane
-        controls: {
-          speed: { value: 0.3, min: -1, max: 1 },
-        },
+        // enable the gui panel
+        gui: true,
       })
 
       // attach it to the window to inspect in the console
@@ -112,9 +109,12 @@
 
       webgl.scene.add(instancedMesh)
 
+      const params = { speed: 0.3 }
+      webgl.gui.add(params, 'speed', -1, 1)
+
       let t = 0
       webgl.onUpdate((dt) => {
-        t += dt * webgl.controls.speed
+        t += dt * params.speed
 
         // rotate the elements each frame,
         // this is a bit expensive, even without projection

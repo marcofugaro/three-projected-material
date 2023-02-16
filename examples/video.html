@@ -19,7 +19,7 @@
 
     <!-- Import maps polyfill -->
     <!-- Remove this when import maps will be widely supported -->
-    <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
 
     <script type="importmap">
       {
@@ -54,12 +54,8 @@
         },
         // move the camera a bit initially
         cameraPosition: new THREE.Vector3(-0.9, 0.9, 2.2),
-        // add the controls-state pane
-        controls: {
-          showProjector: false,
-        },
-        // enable gamma
-        gamma: true,
+        // enable the gui panel
+        gui: true,
       })
 
       // attach it to the window to inspect in the console
@@ -74,11 +70,21 @@
 
       // create the VideoTexture and enable gamma correction for it
       const texture = new THREE.VideoTexture(video)
-      texture.encoding = THREE.sRGBEncoding
 
       // load the cinema model
       const gltf = await loadGltf('./models/cinema_screen.glb')
       const cinemaModel = gltf.scene
+      // model is in linear color space
+      cinemaModel.traverse((child) => {
+        if (child.isMesh) {
+          if (child.material.map) {
+            child.material.map.encoding = THREE.LinearEncoding
+          }
+          if (child.material.color.getHexString() !== 'ffffff') {
+            child.material.color.convertLinearToSRGB()
+          }
+        }
+      })
       cinemaModel.scale.setScalar(0.1)
       webgl.scene.add(cinemaModel)
 
@@ -86,13 +92,12 @@
       const projector = new THREE.PerspectiveCamera(30, 16 / 9, 0.01, 2)
       projector.position.set(0, 0.55, 1.52)
       const helper = new THREE.CameraHelper(projector)
-      webgl.controls.$onChanges((controls) => {
-        if (controls.showProjector) {
-          if (controls.showProjector.value) {
-            webgl.scene.add(helper)
-          } else {
-            webgl.scene.remove(helper)
-          }
+      const gui = webgl.gui.add({ showProjector: false }, 'showProjector')
+      gui.onChange((showProjector) => {
+        if (showProjector) {
+          webgl.scene.add(helper)
+        } else {
+          webgl.scene.remove(helper)
         }
       })
 

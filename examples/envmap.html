@@ -19,7 +19,7 @@
 
     <!-- Import maps polyfill -->
     <!-- Remove this when import maps will be widely supported -->
-    <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
 
     <script type="importmap">
       {
@@ -46,8 +46,6 @@
         showFps: true,
         // enable orbit-controls
         orbitControls: true,
-        // enable gamma
-        gamma: true,
       })
 
       // attach it to the window to inspect in the console
@@ -55,12 +53,10 @@
 
       // load the example texture
       const texture = new THREE.TextureLoader().load('./images/charles-unsplash.jpg')
-      texture.encoding = THREE.sRGBEncoding
 
       // load the envMap
       const envMap = new THREE.TextureLoader().load('./images/kandao3_blurred.jpg')
       envMap.mapping = THREE.EquirectangularReflectionMapping
-      envMap.encoding = THREE.sRGBEncoding
 
       const geometry = new THREE.IcosahedronGeometry(1, 6)
       const material = new ProjectedMaterial({
