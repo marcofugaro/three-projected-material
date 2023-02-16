@@ -1,7 +1,7 @@
 // Taken from https://github.com/marcofugaro/threejs-modern-app/blob/master/src/lib/WebGLApp.js
-import * as THREE from 'https://unpkg.com/three@0.139.2/build/three.module.js'
-import { OrbitControls } from 'https://unpkg.com/three@0.139.2/examples/jsm/controls/OrbitControls.js'
-import Stats from 'https://unpkg.com/three@0.139.2/examples/jsm/libs/stats.module.js'
+import * as THREE from 'three'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import Stats from 'three/addons/libs/stats.module.js'
 import { initControls } from './Controls.js'
 
 export default class WebGLApp {

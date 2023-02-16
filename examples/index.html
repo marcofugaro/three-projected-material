@@ -137,7 +137,8 @@
     <script type="importmap">
       {
         "imports": {
-          "three": "https://unpkg.com/three@0.139.2/build/three.module.js"
+          "three": "https://unpkg.com/three@0.149.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.149.0/examples/jsm/"
         }
       }
     </script>
@@ -194,7 +195,7 @@
 
     <script type="module">
       import * as THREE from 'three'
-      import { RoundedBoxGeometry } from 'https://unpkg.com/three@0.139.2/examples/jsm/geometries/RoundedBoxGeometry.js'
+      import { RoundedBoxGeometry } from 'https://unpkg.com/three@0.149.0/examples/jsm/geometries/RoundedBoxGeometry.js'
       import * as eases from 'https://unpkg.com/eases-jsnext@1.0.10/dist/eases.es.js'
       import WebGLApp from './lib/WebGLApp.js'
       import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
@@ -302,19 +303,16 @@
 
       // add lights
       const spotLight = new THREE.SpotLight(0xffffff, 4, 40, Math.PI / 4, 1)
+      spotLight.decay = 1
       spotLight.position.set(20, 20, 15)
       spotLight.lookAt(0, 0, 0)
       webgl.scene.add(spotLight)
 
       const spotLight2 = new THREE.SpotLight(0xffffff, 4, 40, Math.PI / 4, 1)
+      spotLight2.decay = 1
       spotLight2.position.set(-10, -3, -3)
       spotLight2.lookAt(0, 0, 0)
       webgl.scene.add(spotLight2)
-
-      // const spotLight3 = new THREE.SpotLight(0xffffff, 0.3, 40, Math.PI / 4, 1)
-      // spotLight3.position.set(5, -5, 5)
-      // spotLight3.lookAt(0, 0, size / 2)
-      // webgl.scene.add(spotLight3)
 
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
       webgl.scene.add(ambientLight)

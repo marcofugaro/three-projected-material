@@ -27,7 +27,8 @@
     <script type="importmap">
       {
         "imports": {
-          "three": "https://unpkg.com/three@0.139.2/build/three.module.js"
+          "three": "https://unpkg.com/three@0.149.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.149.0/examples/jsm/"
         }
       }
     </script>
@@ -158,7 +159,7 @@
 
       // reset the camera position
       webgl.camera.position.copy(initialCameraPosition)
-      webgl.camera.up.copy(THREE.Object3D.DefaultUp)
+      webgl.camera.up.copy(THREE.Object3D.DEFAULT_UP)
       webgl.camera.lookAt(0, 0, 0)
 
       // move the mesh any way you want! in this case
