@@ -50,7 +50,7 @@
 
       // create a video element and play it
       const video = document.createElement('video')
-      video.src = '/images/bigbucksbunny.mp4'
+      video.src = './images/bigbucksbunny.mp4'
       video.muted = true
       video.loop = true
       video.play()
@@ -59,7 +59,7 @@
       const texture = new THREE.VideoTexture(video)
 
       // load the cinema model
-      const gltf = await loadGltf('/models/cinema_screen.glb')
+      const gltf = await loadGltf('./models/cinema_screen.glb')
       const cinemaModel = gltf.scene
       // model is in linear color space
       cinemaModel.traverse((child) => {

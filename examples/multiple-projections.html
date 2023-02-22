@@ -48,12 +48,12 @@
       window.webgl = webgl
 
       // load the model and extract the geometry from it
-      const gltf = await loadGltf('/models/suzanne.gltf')
+      const gltf = await loadGltf('./models/suzanne.gltf')
       const geometry = extractGeometry(gltf.scene)
       geometry.clearGroups()
 
       // load the example texture
-      const texture = new THREE.TextureLoader().load('/images/black-spot.png')
+      const texture = new THREE.TextureLoader().load('./images/black-spot.png')
 
       // make an array of materials with the same texture
       const materials = []
