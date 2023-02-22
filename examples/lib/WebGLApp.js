@@ -1,16 +1,8 @@
 // Taken from https://github.com/marcofugaro/threejs-modern-app/blob/master/src/lib/WebGLApp.js
-import {
-  Color,
-  OrthographicCamera,
-  PerspectiveCamera,
-  Scene,
-  sRGBEncoding,
-  Vector3,
-  WebGLRenderer,
-} from 'three'
+import { Color, OrthographicCamera, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import Stats from 'three/addons/libs/stats.module.js'
-import GUI from 'https://unpkg.com/lil-gui@0.18.0/dist/lil-gui.esm.js'
+import GUI from 'lil-gui'
 import { ColorManagement } from 'three'
 
 export default class WebGLApp {

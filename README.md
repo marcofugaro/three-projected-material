@@ -20,10 +20,20 @@ or
 yarn add three-projected-material
 ```
 
-You can also use it from the CDN, just make sure to put this after the three.js script:
+You can also use it from the CDN, just make sure to use the three.js import map:
 
 ```html
-<script src="https://unpkg.com/three-projected-material"></script>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three/build/three.module.js"
+    }
+  }
+</script>
+<script type="module">
+  import ProjectedMaterial from 'https://unpkg.com/three-projected-material/build/ProjectedMaterial.module.js'
+  // ...
+</script>
 ```
 
 ## Getting started

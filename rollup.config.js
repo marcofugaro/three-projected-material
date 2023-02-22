@@ -16,7 +16,7 @@ const babelOptions = {
   ],
   plugins: [
     [
-      '@babel/plugin-proposal-class-properties',
+      '@babel/plugin-proposal-private-methods',
       {
         loose: true,
       },
@@ -31,13 +31,8 @@ export default [
     plugins: [babel(babelOptions)],
     output: [
       {
-        format: 'umd',
-        globals: {
-          three: 'THREE',
-        },
-        name: 'projectedMaterial',
-        exports: 'named',
-        file: 'build/ProjectedMaterial.js',
+        format: 'cjs',
+        file: 'build/ProjectedMaterial.cjs.js',
       },
       {
         format: 'esm',

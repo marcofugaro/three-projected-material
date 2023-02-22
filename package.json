@@ -3,14 +3,11 @@
   "description": "Material which projects a texture onto an object",
   "version": "2.2.1",
   "type": "module",
-  "main": "./build/ProjectedMaterial.js",
-  "module": "./build/ProjectedMaterial.module.js",
-  "types": "./ProjectedMaterial.d.ts",
   "exports": {
     ".": {
       "types": "./ProjectedMaterial.d.ts",
       "import": "./build/ProjectedMaterial.module.js",
-      "require": "./build/ProjectedMaterial.js"
+      "require": "./build/ProjectedMaterial.cjs.js"
     }
   },
   "repository": "git@github.com:marcofugaro/three-projected-material.git",
@@ -20,24 +17,26 @@
     "build/"
   ],
   "scripts": {
-    "start": "serve examples/ --no-request-logging",
+    "start": "vite",
     "build": "rollup -c",
-    "postbuild": "cp build/ProjectedMaterial.module.js examples/lib/"
+    "build-examples": "vite build"
   },
   "peerDependencies": {
     "three": "*"
   },
   "devDependencies": {
-    "@babel/core": "^7.17.9",
-    "@babel/plugin-proposal-class-properties": "^7.16.7",
-    "@babel/preset-env": "^7.16.11",
-    "@rollup/plugin-babel": "^5.3.1",
-    "@types/three": "^0.139.0",
+    "@babel/core": "^7.21.0",
+    "@babel/plugin-proposal-class-properties": "^7.18.6",
+    "@babel/preset-env": "^7.20.2",
+    "@rollup/plugin-babel": "^6.0.3",
+    "@types/three": "^0.149.0",
+    "eases": "^1.0.8",
     "eslint": "^8.34.0",
     "eslint-config-prettier": "^8.6.0",
-    "rollup": "^2.70.2",
-    "serve": "^14.2.0",
+    "lil-gui": "^0.18.0",
+    "rollup": "^3.17.2",
     "stats.js": "^0.17.0",
-    "three": "0.149.0"
+    "three": "0.149.0",
+    "vite": "^4.1.4"
   }
 }

@@ -23,23 +23,10 @@
       Click to paint, drag to explore.
     </p>
 
-    <!-- Import maps polyfill -->
-    <!-- Remove this when import maps will be widely supported -->
-    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.149.0/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.149.0/examples/jsm/"
-        }
-      }
-    </script>
-
     <script type="module">
       import * as THREE from 'three'
       import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
+      import ProjectedMaterial from '..'
       import { loadGltf, extractGeometry } from './lib/three-utils.js'
 
       // grab our canvas
@@ -61,12 +48,12 @@
       window.webgl = webgl
 
       // load the model and extract the geometry from it
-      const gltf = await loadGltf('./models/suzanne.gltf')
+      const gltf = await loadGltf('/models/suzanne.gltf')
       const geometry = extractGeometry(gltf.scene)
       geometry.clearGroups()
 
       // load the example texture
-      const texture = new THREE.TextureLoader().load('./images/black-spot.png')
+      const texture = new THREE.TextureLoader().load('/images/black-spot.png')
 
       // make an array of materials with the same texture
       const materials = []
@@ -137,7 +124,7 @@
       })
 
       // add lights
-      const ambientLight = new THREE.AmbientLight(0xffffff, 1)
+      const ambientLight = new THREE.AmbientLight('#ffffff', 1)
       webgl.scene.add(ambientLight)
 
       // start animation loop
