@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { monkeyPatch, addLoadListener } from './three-utils'
 
-export default class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
+export default class ProjectedMaterial extends THREE.MeshBasicMaterial {
   // internal values... they are exposed via getters
   #camera
   #cover
