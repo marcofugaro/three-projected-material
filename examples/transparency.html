@@ -17,23 +17,10 @@
       <img src="images/source.svg" />
     </a>
 
-    <!-- Import maps polyfill -->
-    <!-- Remove this when import maps will be widely supported -->
-    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.149.0/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.149.0/examples/jsm/"
-        }
-      }
-    </script>
-
     <script type="module">
       import * as THREE from 'three'
       import WebGLApp from './lib/WebGLApp.js'
-      import ProjectedMaterial from './lib/ProjectedMaterial.module.js'
+      import ProjectedMaterial from '..'
       import { random } from './lib/math-utils.js'
 
       // grab our canvas
@@ -55,7 +42,7 @@
       window.webgl = webgl
 
       // load the texture with transparency
-      const texture = new THREE.TextureLoader().load('./images/three-projected-material-4.png')
+      const texture = new THREE.TextureLoader().load('/images/three-projected-material-4.png')
 
       const geometry = new THREE.IcosahedronGeometry(1.3, 5)
       const material = new ProjectedMaterial({
@@ -81,15 +68,15 @@
       })
 
       // add lights
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
+      const directionalLight = new THREE.DirectionalLight('#ffffff', 0.5)
       directionalLight.position.set(0, 10, 10)
       webgl.scene.add(directionalLight)
 
-      const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.2)
+      const directionalLight2 = new THREE.DirectionalLight('#ffffff', 0.2)
       directionalLight2.position.set(10, 0, -5)
       webgl.scene.add(directionalLight2)
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+      const ambientLight = new THREE.AmbientLight('#ffffff', 0.6)
       webgl.scene.add(ambientLight)
 
       // start animation loop
