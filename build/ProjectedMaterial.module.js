@@ -177,10 +177,10 @@ class ProjectedMaterial extends THREE.MeshBasicMaterial {
       isTextureProjected: {
         value: false
       },
-      // if we have multiple materials we want to show the
-      // background only of the first material
+      // background opacity was 1, modified it to be 0
+      // in order to show the underlying original texture
       backgroundOpacity: {
-        value: 1
+        value: 0
       },
       // these will be set on project()
       viewMatrixCamera: {
