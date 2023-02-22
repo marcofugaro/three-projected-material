@@ -32,7 +32,8 @@ jobs:
       - name: Install Dependencies
         run: yarn
       - name: Build
-        run: yarn build-examples
+        # Vite needs a base folder to point the url to
+        run: yarn build-examples --base=/three-projected-material/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
