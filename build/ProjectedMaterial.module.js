@@ -55,7 +55,7 @@ var _textureScale = /*#__PURE__*/_classPrivateFieldLooseKey("textureScale");
 var _saveCameraProjectionMatrix = /*#__PURE__*/_classPrivateFieldLooseKey("saveCameraProjectionMatrix");
 var _saveDimensions = /*#__PURE__*/_classPrivateFieldLooseKey("saveDimensions");
 var _saveCameraMatrices = /*#__PURE__*/_classPrivateFieldLooseKey("saveCameraMatrices");
-class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
+class ProjectedMaterial extends THREE.MeshBasicMaterial {
   // internal values... they are exposed via getters
 
   get camera() {
