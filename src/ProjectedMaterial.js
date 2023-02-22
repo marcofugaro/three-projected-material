@@ -112,9 +112,9 @@ export default class ProjectedMaterial extends THREE.MeshBasicMaterial {
       isTextureLoaded: { value: Boolean(texture.image) },
       // don't show the texture if we haven't called project()
       isTextureProjected: { value: false },
-      // if we have multiple materials we want to show the
-      // background only of the first material
-      backgroundOpacity: { value: 1 },
+      // background opacity was 1, modified it to be 0
+      // in order to show the underlying original texture
+      backgroundOpacity: { value: 0 },
       // these will be set on project()
       viewMatrixCamera: { value: new THREE.Matrix4() },
       projectionMatrixCamera: { value: new THREE.Matrix4() },
