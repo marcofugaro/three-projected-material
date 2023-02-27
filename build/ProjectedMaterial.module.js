@@ -105,6 +105,15 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
   set textureOffset(textureOffset) {
     this.uniforms.textureOffset.value = textureOffset;
   }
+  get backgroundOpacity() {
+    return this.uniforms.backgroundOpacity.value;
+  }
+  set backgroundOpacity(backgroundOpacity) {
+    this.uniforms.backgroundOpacity.value = backgroundOpacity;
+    if (backgroundOpacity < 1 && !this.transparent) {
+      console.warn('You have to pass "transparent: true" to the ProjectedMaterial for the backgroundOpacity option to work');
+    }
+  }
   get cover() {
     return _classPrivateFieldLooseBase(this, _cover)[_cover];
   }
@@ -118,6 +127,7 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       texture = new THREE.Texture(),
       textureScale = 1,
       textureOffset = new THREE.Vector2(),
+      backgroundOpacity = 1,
       cover = false,
       ...options
     } = _temp === void 0 ? {} : _temp;
@@ -126,6 +136,9 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     }
     if (!camera.isCamera) {
       throw new Error('Invalid camera passed to the ProjectedMaterial');
+    }
+    if (backgroundOpacity < 1 && !options.transparent) {
+      console.warn('You have to pass "transparent: true" to the ProjectedMaterial for the backgroundOpacity option to work');
     }
     super(options);
     Object.defineProperty(this, _saveCameraMatrices, {
@@ -180,7 +193,7 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
       // if we have multiple materials we want to show the
       // background only of the first material
       backgroundOpacity: {
-        value: 1
+        value: backgroundOpacity
       },
       // these will be set on project()
       viewMatrixCamera: {
@@ -351,7 +364,7 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     if (Array.isArray(mesh.material)) {
       const materialIndex = mesh.material.indexOf(this);
       if (!mesh.material[materialIndex].transparent) {
-        throw new Error(`You have to pass "transparent: true" to the ProjectedMaterial if you're working with multiple materials.`);
+        console.warn(`You have to pass "transparent: true" to the ProjectedMaterial if you're working with multiple materials.`);
       }
       if (materialIndex > 0) {
         this.uniforms.backgroundOpacity.value = 0;
@@ -386,7 +399,7 @@ class ProjectedMaterial extends THREE.MeshPhysicalMaterial {
     if (Array.isArray(instancedMesh.material)) {
       const materialIndex = instancedMesh.material.indexOf(this);
       if (!instancedMesh.material[materialIndex].transparent) {
-        throw new Error(`You have to pass "transparent: true" to the ProjectedMaterial if you're working with multiple materials.`);
+        console.warn(`You have to pass "transparent: true" to the ProjectedMaterial if you're working with multiple materials.`);
       }
       if (materialIndex > 0) {
         this.uniforms.backgroundOpacity.value = 0;
