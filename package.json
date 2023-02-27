@@ -1,7 +1,7 @@
 {
   "name": "three-projected-material",
   "description": "Material which projects a texture onto an object",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "type": "module",
   "exports": {
     ".": {
