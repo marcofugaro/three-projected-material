@@ -19,6 +19,7 @@ declare module 'three-projected-material' {
     textureScale?: number
     textureOffset?: Vector2
     cover?: boolean
+    backgroundOpacity?: number
   }
 
   export default class ProjectedMaterial extends MeshPhysicalMaterial {
@@ -27,6 +28,7 @@ declare module 'three-projected-material' {
     textureScale: number
     textureOffset: Vector2
     cover: boolean
+    backgroundOpacity: number
 
     uniforms: {
       projectedTexture: {
