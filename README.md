@@ -50,12 +50,6 @@ or, if you're using CommonJS
 const ProjectedMaterial = require('three-projected-material').default
 ```
 
-Instead, if you install it from the CDN, its exposed under `window.projectedMaterial`, and you use it like this
-
-```js
-const ProjectedMaterial = window.projectedMaterial.default
-```
-
 Then, you can use it like this:
 
 ```js
