@@ -10,7 +10,15 @@
 
 install NPM and node
 
+
+ 
+- ONLY FOR MAC , install *brew* 
+
+https://brew.sh/
+
 ```
+brew cleanup && brew update
+
 brew install node
 ```
 
@@ -23,7 +31,15 @@ npm install three-projected-material
 or
 
 ```
+brew install yarn 
 yarn add three-projected-material
+
+```
+
+### FINALLY to start the application locally 
+```
+
+yarn start
 ```
 
 You can also use it from the CDN, just make sure to use the three.js import map:
@@ -158,3 +174,9 @@ projectInstanceAt(i, instancedMesh, dummy.matrix)
 | `index`         | The index of the instanced element to project.                                                                           |
 | `instancedMesh` | The [InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh) with a projected material.                   |
 | `matrix`        | The `matrix` of the dummy you used to position the instanced mesh element. Be sure to call `.updateMatrix()` beforehand. |
+
+
+- https://vitejs.dev/guide/
+- https://classic.yarnpkg.com/lang/en/docs/cli/run/
+
+

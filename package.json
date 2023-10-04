@@ -38,5 +38,8 @@
     "stats.js": "^0.17.0",
     "three": "0.149.0",
     "vite": "^4.1.4"
+  },
+  "dependencies": {
+    "three-projected-material": "^2.2.2"
   }
 }
