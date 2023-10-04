@@ -8,6 +8,12 @@
 
 ## Installation
 
+install NPM and node
+
+```
+brew install node
+```
+
 After having installed three.js, install it from npm with:
 
 ```
