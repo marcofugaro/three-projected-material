@@ -178,5 +178,6 @@ projectInstanceAt(i, instancedMesh, dummy.matrix)
 
 - https://vitejs.dev/guide/
 - https://classic.yarnpkg.com/lang/en/docs/cli/run/
+- deploy
 
 
