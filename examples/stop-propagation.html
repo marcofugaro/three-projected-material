@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Same camera example - three-projected-material</title>
+  <link rel="stylesheet" href="css/style.css" type="text/css" />
+</head>
+
+<body>
+  <canvas id="app"></canvas>
+  <a class="source-fab" target="_blank" href="https://github.com/marcofugaro/three-projected-material/blob/master/examples/same-camera.html" title="View source code on GitHub">
+    <img src="images/source.svg" />
+  </a>
+
+  <script type="module">
+    import * as THREE from 'three'
+    import WebGLApp from './lib/WebGLApp.js'
+    import ProjectedMaterial from '..'
+    import { random } from './lib/math-utils.js'
+    import {
+      mergeBufferGeometries,
+    } from "three/addons/utils/BufferGeometryUtils";
+
+    // grab our canvas
+    const canvas = document.querySelector('#app')
+
+    // set to true for orthogrpahic camera
+    const useOrthographicCamera = false
+
+    // WebGLApp is a really basic wrapper around the three.js setup,
+    // it hides all unnecessary stuff not related to this example
+    const webgl = new WebGLApp({
+      canvas,
+      // set the scene background color
+      background: '#E6E6E6',
+      // show the fps counter from stats.js
+      showFps: true,
+      // enable orbit-controls
+      orbitControls: true,
+      orthographic: useOrthographicCamera,
+    })
+
+    // attach it to the window to inspect in the console
+    window.webgl = webgl
+
+    // load the example texture
+    const texture = new THREE.TextureLoader().load('./images/charles-unsplash.jpg')
+
+    // create a bunch of meshes
+    const elements = new THREE.Group()
+    const NUM_ELEMENTS = 4
+
+    const meshes = []
+    for (let i = 0; i < NUM_ELEMENTS; i++) {
+      const geometry = new THREE.BoxGeometry(1 + i * 1.5, 1 + i * 1.5, 0.01)
+
+
+
+      // we need to create a depth map before we can create and apply the projected material
+      // for now we don't specify a material
+      const element = new THREE.Mesh(geometry)
+
+
+      if (i === 3) {
+        geometry.rotateX(-Math.PI * 0.375)
+      } else {
+        element.position.z = -1 * i
+      }
+
+      elements.add(element)
+      meshes.push(element)
+    }
+
+
+    // create a render target for the depth map
+    // choose a high resolution here for sharp edges
+    const rt = new THREE.WebGLRenderTarget(2000, 2000);
+    rt.texture.format = THREE.RGBAFormat;
+    rt.texture.minFilter = THREE.NearestFilter;
+    rt.texture.magFilter = THREE.NearestFilter;
+    rt.texture.generateMipmaps = false;
+    rt.stencilBuffer = false;
+    rt.depthTexture = new THREE.DepthTexture();
+    rt.depthBuffer = true;
+
+    // target.depthTexture = new THREE.DepthTexture();
+    rt.depthTexture.type = THREE.FloatType;
+
+    // create a plane to draw the depth map on
+    // this is mainly for debugging and not required
+    const depthMapPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(10, 10),
+      new THREE.MeshBasicMaterial({ map: rt.depthTexture })
+    );
+    depthMapPlane.position.x = 10;
+    elements.add(depthMapPlane);
+
+    // add all elements
+    webgl.scene.add(elements)
+
+
+    // add a second camera from which to project the material from
+    // this camera is also used for the depth map
+    const camera = useOrthographicCamera ? new THREE.OrthographicCamera().copy(webgl.camera) : new THREE.PerspectiveCamera().copy(webgl.camera)
+    webgl.scene.add(camera)
+
+    // the depth map disregards elements outside the camera near and far pane
+    // make sure all elements you want to project on are between those panes
+    camera.near = 2
+    camera.far = 10
+    camera.updateProjectionMatrix()
+
+    // create the depthmap
+    webgl.scene.overrideMaterial = new THREE.MeshBasicMaterial();
+    webgl.renderer.setRenderTarget(rt);
+    webgl.renderer.render(webgl.scene, camera);
+    webgl.renderer.setRenderTarget(null);
+    webgl.scene.overrideMaterial = null;
+
+
+
+    // with the depth map created, create a projected material for each element
+    meshes.forEach(mesh => {
+      const material = new ProjectedMaterial({
+        // use the scene camera itself
+        camera: camera,
+        texture,
+        color: '#3149D5',
+        textureScale: 0.8,
+        // pass the created depth map
+        depthMap: rt.depthTexture,
+      })
+
+      // alternatively you can also set / update the depthmap later:
+      // material.depthMap = rt.texture
+
+      mesh.material = material
+      material.project(mesh)
+    })
+
+    // add the camera helper after creating the depthmap to not include it
+    webgl.scene.add(new THREE.CameraHelper(camera))
+
+
+    // position the main camera
+    webgl.camera.position.set(-3, 0, 3);
+    webgl.camera.far = 1000
+    webgl.camera.updateProjectionMatrix()
+
+
+    // add lights
+    const directionalLight = new THREE.DirectionalLight('#ffffff', 0.6)
+    directionalLight.position.set(0, 10, 10)
+    webgl.scene.add(directionalLight)
+
+    const ambientLight = new THREE.AmbientLight('#ffffff', 0.6)
+    webgl.scene.add(ambientLight)
+
+    // start animation loop
+    webgl.start()
+  </script>
+</body>
+
+</html>

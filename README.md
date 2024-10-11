@@ -87,6 +87,7 @@ ProjectedMaterial also supports **instanced meshes** via three.js' [InstancedMes
   <a href="https://marcofugaro.github.io/three-projected-material/multiple-projections"><img width="274" src="examples/screenshots/multiple-projections.png" /></a>
   <a href="https://marcofugaro.github.io/three-projected-material/instancing"><img width="274" src="examples/screenshots/instancing.png" /></a>
   <a href="https://marcofugaro.github.io/three-projected-material/multiple-projections-instancing"><img width="274" src="examples/screenshots/multiple-projections-instancing.png" /></a>
+  <a href="https://marcofugaro.github.io/three-projected-material/stop-propagation"><img width="274" src="examples/screenshots/stop-propagation.png" /></a>
 </p>
 
 ## API Reference
@@ -103,6 +104,7 @@ Create a new material to later use for a mesh.
 | `textureOffset`     | `new THREE.Vector2()` | Offset the texture in a x or y direction. The unit system goes from 0 to 1, from the bottom left corner to the top right corner of the projector camera frustum.                                                                                                                                                                                                                                |
 | `cover`             | false                 | Wheter the texture should act like [`background-size: cover`](https://css-tricks.com/almanac/properties/b/background-size/) on the projector frustum. By default it works like [`background-size: contain`](https://css-tricks.com/almanac/properties/b/background-size/).                                                                                                                      |
 | `backgroundOpacity` | 1                     | The opacity of the part of the mesh which is not covered by the projected texture. You can set this to 0 if you don't want the non-projected part of the mesh to be shown.                                                                                                                                                                                                                      |
+| `depthMap`          |                       | A depth map texture to prevent the projected texture to be rendered on geometry that is obscured from the point of view of the camera |
 | `...options`        |                       | Other options you pass to any three.js material like `color`, `opacity`, `envMap` and so on. The material is built from a [MeshPhysicalMaterial](https://threejs.org/docs/index.html#api/en/materials/MeshPhysicalMaterial), so you can pass any property of that material and of its parent [MeshStandardMaterial](https://threejs.org/docs/index.html#api/en/materials/MeshStandardMaterial). |
 
 These properties are exposed as properties of the material, so you can change them later.
